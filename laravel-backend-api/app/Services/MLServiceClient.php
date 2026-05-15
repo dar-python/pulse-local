@@ -15,7 +15,11 @@ class MLServiceClient
             ->post($this->predictionUrl(), $payload);
 
         if ($response->failed()) {
-            throw new RuntimeException('ML service returned an unsuccessful response.');
+            throw new RuntimeException(sprintf(
+                'ML service returned HTTP %s: %s',
+                $response->status(),
+                $response->body()
+            ));
         }
 
         return $this->normalizeRiskResult($response->json());

@@ -1,0 +1,133 @@
+name: PulseLocal CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feature/**
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  laravel-api:
+    name: Laravel API Tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: laravel-backend-api
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, fileinfo, pdo, sqlite, pdo_sqlite
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Prepare Laravel environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+
+      - name: Run Laravel tests
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+          ML_SERVICE_URL: http://localhost:8001
+        run: php artisan test
+
+      - name: Validate checkout route exists
+        run: php artisan route:list --path=api/checkout
+
+  ml-service:
+    name: FastAPI ML Service Tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ml-service
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run ML service tests
+        run: |
+          if [ -d "tests" ]; then pytest; else python -m compileall app; fi
+
+  ml-training:
+    name: ML Training Pipeline Check
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ml-training
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install training dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run dataset preparation
+        run: python scripts/prepare_dataset.py
+
+  flutter-mobile:
+    name: Flutter Mobile Checks
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: flutter-mobile-app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Analyze Flutter code
+        run: flutter analyze
+
+      - name: Run Flutter tests
+        run: flutter test
+        
