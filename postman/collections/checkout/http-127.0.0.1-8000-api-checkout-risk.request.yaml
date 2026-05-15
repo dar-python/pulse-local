@@ -1,0 +1,5 @@
+$kind: http-request
+name: http://127.0.0.1:8000/api/checkout/risk
+url: http://127.0.0.1:8000/api/checkout/risk
+method: POST
+order: 1778879185201
