@@ -1,0 +1,34 @@
+.env
+.env.*
+!.env.example
+
+/api/vendor
+/api/storage/*.key
+/laravel-backend-api/vendor
+/laravel-backend-api/storage/*.key
+
+/ml-service/.venv
+/ml-service/__pycache__
+/ml-service/.pytest_cache
+/ml-service/models/*.joblib
+
+/mobile/build
+/mobile/.dart_tool
+/mobile/.flutter-plugins
+/mobile/.flutter-plugins-dependencies
+/flutter-mobile-app/build
+/flutter-mobile-app/.dart_tool
+/flutter-mobile-app/.flutter-plugins
+/flutter-mobile-app/.flutter-plugins-dependencies
+
+# Dataset archives
+*.zip
+
+# ML model artifacts
+ml-training/artifacts/
+ml-service/models/*.joblib
+ml-service/models/*.pkl
+
+# Python cache
+__pycache__/
+*.pyc
