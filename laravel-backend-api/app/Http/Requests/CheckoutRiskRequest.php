@@ -17,9 +17,9 @@ class CheckoutRiskRequest extends FormRequest
             'rider_to_order_ratio' => ['required', 'numeric', 'between:0,1'],
             'merchant_prep_time' => ['required', 'integer', 'min:0'],
             'traffic_level' => ['required', 'string', 'in:light,moderate,heavy'],
-            'weather_category' => ['required', 'string', 'in:clear,cloudy,rainy,stormy'],
+            'weather_category' => ['required', 'string', 'in:clear,rainy,stormy'],
             'delivery_distance_km' => ['required', 'numeric', 'min:0'],
-            'payment_method' => ['required', 'string', 'in:cod,card,wallet'],
+            'payment_method' => ['required', 'string', 'in:cod,prepaid'],
         ];
     }
 }
