@@ -23,7 +23,23 @@ return [
     ],
 
     'ml' => [
-        'url' => env('ML_SERVICE_URL', 'http://ml-service:8001'),
+        'url' => env('ML_SERVICE_URL', 'http://127.0.0.1:8001'),
+        'timeout' => (int) env('ML_SERVICE_TIMEOUT_SECONDS', 2),
+    ],
+
+    'ml_service' => [
+        'url' => env('ML_SERVICE_URL', 'http://127.0.0.1:8001'),
+        'timeout' => (int) env('ML_SERVICE_TIMEOUT_SECONDS', 2),
+    ],
+
+    'checkout_risk' => [
+        'fallback_score' => (float) env('CHECKOUT_RISK_FALLBACK_SCORE', 0.50),
+        'fallback_level' => env('CHECKOUT_RISK_FALLBACK_LEVEL', 'Unknown'),
+        'fallback_source' => env('CHECKOUT_RISK_FALLBACK_SOURCE', 'laravel-fallback'),
+        'fallback_recommendation' => env(
+            'CHECKOUT_RISK_FALLBACK_RECOMMENDATION',
+            'Prediction service unavailable. Proceed with standard checkout risk.'
+        ),
     ],
 
     'ses' => [

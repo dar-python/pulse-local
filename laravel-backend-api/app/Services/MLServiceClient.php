@@ -11,7 +11,7 @@ class MLServiceClient
     {
         $response = Http::acceptJson()
             ->asJson()
-            ->timeout(3)
+            ->timeout((int) config('services.ml_service.timeout', 2))
             ->post($this->predictionUrl(), $payload);
 
         if ($response->failed()) {
@@ -23,7 +23,7 @@ class MLServiceClient
 
     private function predictionUrl(): string
     {
-        return rtrim((string) config('services.ml.url'), '/').'/predict';
+        return rtrim((string) config('services.ml_service.url'), '/').'/predict';
     }
 
     private function normalizeRiskResult(mixed $payload): array
