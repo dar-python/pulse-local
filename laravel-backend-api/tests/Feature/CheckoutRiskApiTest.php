@@ -40,8 +40,8 @@ class CheckoutRiskApiTest extends TestCase
         Http::assertSent(fn ($request) => $request->url() === 'http://ml-service:8001/predict'
             && $request['rider_to_order_ratio'] === 0.45
             && $request['merchant_prep_time'] === 25
-            && $request['traffic_level'] === 'heavy'
-            && $request['weather_category'] === 'rainy'
+            && $request['traffic_corridor_intensity'] === 'heavy'
+            && $request['address_complexity'] === 'medium'            && $request['weather_category'] === 'rainy'
             && $request['delivery_distance_km'] === 4.2
             && $request['payment_method'] === 'cod');
     }
@@ -154,14 +154,15 @@ class CheckoutRiskApiTest extends TestCase
     }
 
     private function validPayload(): array
-    {
-        return [
-            'rider_to_order_ratio' => 0.45,
-            'merchant_prep_time' => 25,
-            'traffic_level' => 'heavy',
-            'weather_category' => 'rainy',
-            'delivery_distance_km' => 4.2,
-            'payment_method' => 'cod',
-        ];
-    }
+        {
+            return [
+                'rider_to_order_ratio' => 0.45,
+                'merchant_prep_time' => 25,
+                'traffic_corridor_intensity' => 'high',
+                'weather_category' => 'rainy',
+                'delivery_distance_km' => 4.2,
+                'address_complexity' => 'medium',
+                'payment_method' => 'cod',
+            ];
+        }
 }
