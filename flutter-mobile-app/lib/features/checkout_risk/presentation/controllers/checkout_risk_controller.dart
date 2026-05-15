@@ -69,9 +69,10 @@ class CheckoutRiskController extends StateNotifier<CheckoutRiskState> {
   static const CheckoutRiskRequest sampleRequest = CheckoutRiskRequest(
     riderToOrderRatio: 0.45,
     merchantPrepTime: 25,
-    trafficLevel: 'heavy',
+    trafficCorridorIntensity: 'high',
     weatherCategory: 'rainy',
     deliveryDistanceKm: 4.2,
+    addressComplexity: 'medium',
     paymentMethod: 'cod',
   );
 

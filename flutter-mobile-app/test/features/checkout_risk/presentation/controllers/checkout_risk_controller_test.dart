@@ -12,7 +12,11 @@ void main() {
     );
 
     expect(controller.state.status, CheckoutRiskStatus.initial);
-    expect(CheckoutRiskController.sampleRequest.trafficLevel, 'heavy');
+    expect(
+      CheckoutRiskController.sampleRequest.trafficCorridorIntensity,
+      'high',
+    );
+    expect(CheckoutRiskController.sampleRequest.addressComplexity, 'medium');
     expect(CheckoutRiskController.sampleRequest.paymentMethod, 'cod');
   });
 

@@ -4,9 +4,9 @@ import 'package:pulse_local_app/core/constants/api_constants.dart';
 
 void main() {
   test('Flutter targets the Laravel checkout risk endpoint only', () {
-    dotenv.testLoad(fileInput: 'API_BASE_URL=http://10.0.2.2:8000/api');
+    dotenv.testLoad(fileInput: 'LARAVEL_BASE_URL=http://10.0.2.2:8000');
 
-    expect(ApiConstants.checkoutRiskEndpoint, 'checkout/risk');
+    expect(ApiConstants.checkoutRiskEndpoint, '/api/checkout/risk');
     expect(ApiConstants.laravelBaseUrl, isNot(contains('ml-service')));
     expect(ApiConstants.laravelBaseUrl, isNot(contains('5000')));
   });
