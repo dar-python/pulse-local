@@ -39,7 +39,7 @@ RECOMMENDATIONS = {
 WeatherCategory = Literal["clear", "rainy", "stormy"]
 TrafficIntensity = Literal["low", "medium", "high"]
 AddressComplexity = Literal["low", "medium", "high"]
-PaymentMethod = Literal["cod", "prepaid"]
+PaymentMethod = Literal["cod", "cash", "gcash", "card"]
 RiskLevel = Literal["Low", "Medium", "High"]
 
 

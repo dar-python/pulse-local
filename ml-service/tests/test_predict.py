@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
+import pytest
 
-from app import main as ml_app
+import app.main as ml_app
 
 
 client = TestClient(ml_app.app)
@@ -105,6 +106,16 @@ def test_predict_does_not_require_model_only_fields():
     assert "Time_of_Day" not in VALID_PUBLIC_PAYLOAD
     assert "Vehicle_Type" not in VALID_PUBLIC_PAYLOAD
     assert "Courier_Experience_yrs" not in VALID_PUBLIC_PAYLOAD
+
+
+@pytest.mark.parametrize("payment_method", ["cod", "cash", "gcash", "card"])
+def test_predict_accepts_laravel_checkout_payment_methods(payment_method):
+    response = client.post(
+        "/predict",
+        json={**VALID_PUBLIC_PAYLOAD, "payment_method": payment_method},
+    )
+
+    assert response.status_code == 200
 
 
 def test_risk_level_uses_metadata_threshold_boundaries():

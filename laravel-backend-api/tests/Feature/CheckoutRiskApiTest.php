@@ -40,8 +40,9 @@ class CheckoutRiskApiTest extends TestCase
         Http::assertSent(fn ($request) => $request->url() === 'http://ml-service:8001/predict'
             && $request['rider_to_order_ratio'] === 0.45
             && $request['merchant_prep_time'] === 25
-            && $request['traffic_corridor_intensity'] === 'heavy'
-            && $request['address_complexity'] === 'medium'            && $request['weather_category'] === 'rainy'
+            && $request['traffic_corridor_intensity'] === 'high'
+            && $request['address_complexity'] === 'medium'
+            && $request['weather_category'] === 'rainy'
             && $request['delivery_distance_km'] === 4.2
             && $request['payment_method'] === 'cod');
     }
@@ -82,7 +83,7 @@ class CheckoutRiskApiTest extends TestCase
             ->with(
                 'Checkout risk ML service fallback triggered.',
                 Mockery::on(fn (array $context) => $context['exception_class'] === RuntimeException::class
-                    && str_contains($context['exception_message'], 'unsuccessful response')
+                    && str_contains($context['exception_message'], 'ML service returned HTTP 500')
                     && $context['ml_service_url'] === 'http://ml-service:8001'
                     && $context['prediction_url'] === 'http://ml-service:8001/predict')
             );
@@ -99,7 +100,7 @@ class CheckoutRiskApiTest extends TestCase
                 'source' => 'laravel-fallback',
                 'debug' => [
                     'exception' => RuntimeException::class,
-                    'message' => 'ML service returned an unsuccessful response.',
+                    'message' => 'ML service returned HTTP 500: {"error":"unavailable"}',
                     'ml_service_url' => 'http://ml-service:8001',
                     'prediction_url' => 'http://ml-service:8001/predict',
                 ],
@@ -131,9 +132,10 @@ class CheckoutRiskApiTest extends TestCase
             ->assertJsonValidationErrors([
                 'rider_to_order_ratio',
                 'merchant_prep_time',
-                'traffic_level',
+                'traffic_corridor_intensity',
                 'weather_category',
                 'delivery_distance_km',
+                'address_complexity',
                 'payment_method',
             ]);
     }
@@ -154,15 +156,15 @@ class CheckoutRiskApiTest extends TestCase
     }
 
     private function validPayload(): array
-        {
-            return [
-                'rider_to_order_ratio' => 0.45,
-                'merchant_prep_time' => 25,
-                'traffic_corridor_intensity' => 'high',
-                'weather_category' => 'rainy',
-                'delivery_distance_km' => 4.2,
-                'address_complexity' => 'medium',
-                'payment_method' => 'cod',
-            ];
-        }
+    {
+        return [
+            'rider_to_order_ratio' => 0.45,
+            'merchant_prep_time' => 25,
+            'traffic_corridor_intensity' => 'high',
+            'weather_category' => 'rainy',
+            'delivery_distance_km' => 4.2,
+            'address_complexity' => 'medium',
+            'payment_method' => 'cod',
+        ];
+    }
 }
