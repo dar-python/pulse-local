@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../features/checkout_risk/presentation/screens/checkout_risk_screen.dart';
+import '../features/checkout_risk/screens/checkout_risk_screen.dart';
 
 class AppRouter {
   const AppRouter._();

@@ -17,8 +17,9 @@ class _CheckoutInputFormState extends ConsumerState<CheckoutInputForm> {
   late final TextEditingController _merchantPrepController;
   late final TextEditingController _distanceController;
 
-  String _trafficLevel = 'heavy';
+  String _trafficCorridorIntensity = 'high';
   String _weatherCategory = 'rainy';
+  String _addressComplexity = 'medium';
   String _paymentMethod = 'cod';
 
   @override
@@ -34,8 +35,9 @@ class _CheckoutInputFormState extends ConsumerState<CheckoutInputForm> {
     _distanceController = TextEditingController(
       text: sample.deliveryDistanceKm.toString(),
     );
-    _trafficLevel = sample.trafficLevel;
+    _trafficCorridorIntensity = sample.trafficCorridorIntensity;
     _weatherCategory = sample.weatherCategory;
+    _addressComplexity = sample.addressComplexity;
     _paymentMethod = sample.paymentMethod;
   }
 
@@ -77,18 +79,18 @@ class _CheckoutInputFormState extends ConsumerState<CheckoutInputForm> {
           ),
           const SizedBox(height: 12),
           _DropdownField(
-            label: 'Traffic level',
-            value: _trafficLevel,
-            values: const ['light', 'moderate', 'heavy'],
+            label: 'Traffic corridor intensity',
+            value: _trafficCorridorIntensity,
+            values: const ['low', 'medium', 'high'],
             onChanged: (value) {
-              setState(() => _trafficLevel = value);
+              setState(() => _trafficCorridorIntensity = value);
             },
           ),
           const SizedBox(height: 12),
           _DropdownField(
             label: 'Weather category',
             value: _weatherCategory,
-            values: const ['clear', 'cloudy', 'rainy', 'stormy'],
+            values: const ['clear', 'rainy', 'stormy'],
             onChanged: (value) {
               setState(() => _weatherCategory = value);
             },
@@ -105,9 +107,18 @@ class _CheckoutInputFormState extends ConsumerState<CheckoutInputForm> {
           ),
           const SizedBox(height: 12),
           _DropdownField(
+            label: 'Address complexity',
+            value: _addressComplexity,
+            values: const ['low', 'medium', 'high'],
+            onChanged: (value) {
+              setState(() => _addressComplexity = value);
+            },
+          ),
+          const SizedBox(height: 12),
+          _DropdownField(
             label: 'Payment method',
             value: _paymentMethod,
-            values: const ['cod', 'card', 'wallet'],
+            values: const ['cod', 'cash', 'gcash', 'card'],
             onChanged: (value) {
               setState(() => _paymentMethod = value);
             },
@@ -116,7 +127,7 @@ class _CheckoutInputFormState extends ConsumerState<CheckoutInputForm> {
           FilledButton.icon(
             onPressed: state.isLoading ? null : _submit,
             icon: const Icon(Icons.analytics_outlined),
-            label: const Text('Check fulfillment risk'),
+            label: const Text('Calculate Fulfillment Risk'),
           ),
         ],
       ),
@@ -131,9 +142,10 @@ class _CheckoutInputFormState extends ConsumerState<CheckoutInputForm> {
     final request = CheckoutRiskRequest(
       riderToOrderRatio: double.parse(_riderRatioController.text.trim()),
       merchantPrepTime: int.parse(_merchantPrepController.text.trim()),
-      trafficLevel: _trafficLevel,
+      trafficCorridorIntensity: _trafficCorridorIntensity,
       weatherCategory: _weatherCategory,
       deliveryDistanceKm: double.parse(_distanceController.text.trim()),
+      addressComplexity: _addressComplexity,
       paymentMethod: _paymentMethod,
     );
 

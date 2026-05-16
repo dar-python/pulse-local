@@ -1,9 +1,21 @@
 from fastapi.testclient import TestClient
+import pytest
 
-from app import app
+import app.main as ml_app
 
 
-client = TestClient(app)
+client = TestClient(ml_app.app)
+
+
+VALID_PUBLIC_PAYLOAD = {
+    "rider_to_order_ratio": 0.45,
+    "merchant_prep_time": 25,
+    "traffic_corridor_intensity": "high",
+    "weather_category": "rainy",
+    "delivery_distance_km": 4.2,
+    "address_complexity": "medium",
+    "payment_method": "cod",
+}
 
 
 def test_root_endpoint_returns_service_status():
@@ -20,106 +32,109 @@ def test_health_endpoint_returns_healthy_status():
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "healthy"}
-
-
-def test_low_risk_prediction():
-    response = client.post(
-        "/predict",
-        json={
-            "rider_to_order_ratio": 0.90,
-            "merchant_prep_time": 8,
-            "traffic_level": "light",
-            "weather_category": "clear",
-            "delivery_distance_km": 1.5,
-            "payment_method": "prepaid",
-        },
-    )
-
-    assert response.status_code == 200
     assert response.json() == {
-        "risk_score": 0.10,
-        "risk_level": "Low",
-        "recommendation": "Low fulfillment risk. Proceed with standard checkout.",
+        "status": "ok",
+        "service": "ml-service",
     }
 
 
-def test_medium_risk_prediction():
-    response = client.post(
-        "/predict",
-        json={
-            "rider_to_order_ratio": 0.45,
-            "merchant_prep_time": 10,
-            "traffic_level": "moderate",
-            "weather_category": "rainy",
-            "delivery_distance_km": 2.0,
-            "payment_method": "prepaid",
-        },
-    )
+def test_predict_uses_model_pipeline_with_public_contract_adapter(monkeypatch):
+    class FakePipeline:
+        def __init__(self):
+            self.input_df = None
+
+        def predict_proba(self, input_df):
+            self.input_df = input_df.copy()
+            return [[0.28, 0.72]]
+
+    fake_pipeline = FakePipeline()
+    monkeypatch.setattr(ml_app, "load_model", lambda: fake_pipeline)
+
+    response = client.post("/predict", json=VALID_PUBLIC_PAYLOAD)
 
     assert response.status_code == 200
     assert response.json() == {
-        "risk_score": 0.45,
-        "risk_level": "Medium",
-        "recommendation": "Moderate fulfillment risk. Show realistic ETA and monitor merchant readiness.",
-    }
-
-
-def test_high_risk_prediction():
-    response = client.post(
-        "/predict",
-        json={
-            "rider_to_order_ratio": 0.45,
-            "merchant_prep_time": 25,
-            "traffic_level": "heavy",
-            "weather_category": "rainy",
-            "delivery_distance_km": 4.2,
-            "payment_method": "cod",
-        },
-    )
-
-    assert response.status_code == 200
-    assert response.json() == {
-        "risk_score": 0.85,
+        "risk_score": 0.72,
         "risk_level": "High",
         "recommendation": "High fulfillment risk. Adjust ETA and notify merchant.",
+        "source": "ml-service",
+    }
+    assert list(fake_pipeline.input_df.columns) == [
+        "Distance_km",
+        "Weather",
+        "Traffic_Level",
+        "Time_of_Day",
+        "Vehicle_Type",
+        "Preparation_Time_min",
+        "Courier_Experience_yrs",
+    ]
+    assert fake_pipeline.input_df.iloc[0].to_dict() == {
+        "Distance_km": 4.2,
+        "Weather": "rainy",
+        "Traffic_Level": "high",
+        "Time_of_Day": "evening",
+        "Vehicle_Type": "motorcycle",
+        "Preparation_Time_min": 25,
+        "Courier_Experience_yrs": 1.0,
     }
 
 
-def test_validation_error_for_invalid_rider_to_order_ratio():
+def test_predict_returns_200_with_valid_public_input():
+    response = client.post("/predict", json=VALID_PUBLIC_PAYLOAD)
+
+    assert response.status_code == 200
+
+
+def test_predict_returns_risk_score_between_zero_and_one():
+    response = client.post("/predict", json=VALID_PUBLIC_PAYLOAD)
+
+    assert response.status_code == 200
+    assert 0 <= response.json()["risk_score"] <= 1
+
+
+def test_predict_returns_supported_risk_level():
+    response = client.post("/predict", json=VALID_PUBLIC_PAYLOAD)
+
+    assert response.status_code == 200
+    assert response.json()["risk_level"] in {"Low", "Medium", "High"}
+
+
+def test_predict_does_not_require_model_only_fields():
+    response = client.post("/predict", json=VALID_PUBLIC_PAYLOAD)
+
+    assert response.status_code == 200
+    assert "Time_of_Day" not in VALID_PUBLIC_PAYLOAD
+    assert "Vehicle_Type" not in VALID_PUBLIC_PAYLOAD
+    assert "Courier_Experience_yrs" not in VALID_PUBLIC_PAYLOAD
+
+
+@pytest.mark.parametrize("payment_method", ["cod", "cash", "gcash", "card"])
+def test_predict_accepts_laravel_checkout_payment_methods(payment_method):
     response = client.post(
         "/predict",
-        json={
-            "rider_to_order_ratio": 1.25,
-            "merchant_prep_time": 8,
-            "traffic_level": "light",
-            "weather_category": "clear",
-            "delivery_distance_km": 1.5,
-            "payment_method": "prepaid",
-        },
+        json={**VALID_PUBLIC_PAYLOAD, "payment_method": payment_method},
     )
+
+    assert response.status_code == 200
+
+
+def test_risk_level_uses_metadata_threshold_boundaries():
+    assert ml_app.classify_risk_level(0.39) == "Low"
+    assert ml_app.classify_risk_level(0.40) == "Medium"
+    assert ml_app.classify_risk_level(0.69) == "Medium"
+    assert ml_app.classify_risk_level(0.70) == "High"
+
+
+def test_validation_error_for_invalid_traffic_corridor_intensity():
+    invalid_payload = {
+        **VALID_PUBLIC_PAYLOAD,
+        "traffic_corridor_intensity": "jammed",
+    }
+
+    response = client.post("/predict", json=invalid_payload)
 
     assert response.status_code == 422
     assert any(
-        error["loc"][-1] == "rider_to_order_ratio"
+        error["loc"][-1] == "traffic_corridor_intensity"
         for error in response.json()["detail"]
-    )
-
-
-def test_validation_error_for_invalid_traffic_level():
-    response = client.post(
-        "/predict",
-        json={
-            "rider_to_order_ratio": 0.75,
-            "merchant_prep_time": 8,
-            "traffic_level": "jammed",
-            "weather_category": "clear",
-            "delivery_distance_km": 1.5,
-            "payment_method": "prepaid",
-        },
-    )
-
-    assert response.status_code == 422
-    assert any(
-        error["loc"][-1] == "traffic_level" for error in response.json()["detail"]
     )

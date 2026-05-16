@@ -2,10 +2,22 @@
 .env.*
 !.env.example
 
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
+
 /api/vendor
 /api/storage/*.key
 /laravel-backend-api/vendor
+/laravel-backend-api/node_modules
 /laravel-backend-api/storage/*.key
+vendor/
+node_modules/
 
 /ml-service/.venv
 /ml-service/__pycache__
