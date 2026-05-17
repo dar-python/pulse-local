@@ -1,16 +1,39 @@
-# pulse_local_app
+# PulseLocal Flutter App
 
-A new Flutter project.
+Flutter customer-facing checkout-risk screen for PulseLocal.
 
-## Getting Started
+The mobile app must call Laravel only. It should not call the FastAPI ML service
+directly.
 
-This project is a starting point for a Flutter application.
+## Environment
 
-A few resources to get you started if this is your first Flutter project:
+Create a local `.env` before running Flutter because `.env` is an app asset:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```powershell
+copy .env.example .env
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Default base URLs:
+
+- Android emulator: `http://10.0.2.2:8000`
+- Windows desktop: `http://127.0.0.1:8000`
+
+Override at runtime:
+
+```powershell
+flutter run --dart-define=LARAVEL_BASE_URL=http://127.0.0.1:8000
+```
+
+## Run
+
+```powershell
+flutter pub get
+flutter run
+```
+
+## Test
+
+```powershell
+flutter analyze
+flutter test
+```

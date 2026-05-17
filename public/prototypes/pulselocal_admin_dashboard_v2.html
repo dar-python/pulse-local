@@ -1,0 +1,646 @@
+
+<style>
+:root {
+  --prussian: #14213d;
+  --orange: #fca311;
+  --tangerine: #c0392b;
+  --green: #1a7a2e;
+  --dusk: #415a77;
+  --silver: #8a9bb0;
+  --alabaster: #f0f2f5;
+  --line: rgba(20,33,61,0.1);
+  --white: #fff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: inherit; background: var(--alabaster); color: var(--prussian); font-size: 14px; }
+
+.shell { display: flex; min-height: 100vh; }
+
+.sidebar {
+  flex: 0 0 232px; background: var(--prussian); color: #fff;
+  display: flex; flex-direction: column; padding: 20px 14px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+.logo { width: 36px; height: 36px; border-radius: 7px; background: var(--orange); color: #000; font-weight: 900; font-size: 13px; display: grid; place-items: center; flex-shrink: 0; }
+.brand-text strong { display: block; font-size: 15px; font-weight: 700; }
+.brand-text span { font-size: 11px; color: var(--silver); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+
+.nav-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--silver); padding: 14px 10px 6px; }
+.nav a {
+  display: flex; align-items: center; gap: 9px; padding: 9px 10px;
+  border-radius: 7px; color: #b0bec8; font-size: 13px; font-weight: 600;
+  text-decoration: none; border-left: 3px solid transparent; margin-bottom: 2px; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.nav a:hover { background: rgba(255,255,255,.07); color: #fff; }
+.nav a.active { background: rgba(252,163,17,.14); color: var(--orange); border-left-color: var(--orange); }
+.nav a i { font-size: 15px; width: 18px; text-align: center; }
+
+.sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08); }
+.role-badge-sidebar {
+  display: flex; align-items: center; gap: 8px; padding: 10px;
+  border-radius: 8px; background: rgba(255,255,255,.06); margin-bottom: 10px;
+}
+.role-badge-sidebar .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--orange); color: #000; font-weight: 800; font-size: 11px; display: grid; place-items: center; flex-shrink: 0; }
+.role-badge-sidebar .info strong { display: block; font-size: 12px; font-weight: 700; }
+.role-badge-sidebar .info span { font-size: 10px; color: var(--silver); }
+.role-pill { font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px; margin-left: auto; flex-shrink: 0; }
+.role-pill.super { background: rgba(252,163,17,.25); color: var(--orange); }
+.role-pill.admin { background: rgba(131,150,174,.25); color: #8396ae; }
+.logout-btn { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 7px; color: #8396ae; font-size: 12px; font-weight: 700; cursor: pointer; width: 100%; background: none; border: none; }
+.logout-btn:hover { background: rgba(255,255,255,.06); color: #fff; }
+
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+.topbar {
+  background: rgba(240,242,245,.96); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line); padding: 14px 24px;
+  display: flex; align-items: center; gap: 14px;
+  position: sticky; top: 0; z-index: 20;
+}
+.topbar-left { flex: 1; }
+.topbar-left p { font-size: 11px; color: var(--dusk); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 1px; }
+.topbar-left h1 { font-size: 20px; font-weight: 800; color: var(--prussian); }
+.search-bar {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--white); border: 1px solid rgba(65,90,119,.2); border-radius: 8px;
+  padding: 0 12px; min-width: 220px; height: 38px;
+}
+.search-bar i { color: var(--silver); font-size: 15px; }
+.search-bar input { border: none; outline: none; font: inherit; font-size: 13px; color: var(--prussian); background: transparent; width: 100%; }
+.search-bar input::placeholder { color: var(--silver); }
+
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.notif-btn {
+  position: relative; width: 38px; height: 38px; border-radius: 8px;
+  background: var(--white); border: 1px solid rgba(65,90,119,.2);
+  display: grid; place-items: center; cursor: pointer; font-size: 17px; color: var(--dusk);
+}
+.notif-dot { position: absolute; top: 7px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: var(--tangerine); border: 2px solid var(--alabaster); }
+.profile-area { display: flex; align-items: center; gap: 8px; }
+.profile-copy { text-align: right; }
+.profile-copy strong { display: block; font-size: 13px; font-weight: 700; }
+.profile-copy span { font-size: 11px; color: var(--dusk); font-weight: 600; }
+.avatar-lg { width: 38px; height: 38px; border-radius: 50%; background: var(--prussian); color: var(--orange); font-weight: 900; font-size: 13px; display: grid; place-items: center; border: 2px solid var(--white); }
+
+.role-toggle { display: flex; align-items: center; gap: 6px; background: var(--white); border: 1px solid var(--line); border-radius: 8px; padding: 4px; }
+.role-toggle button {
+  font: inherit; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 6px;
+  border: none; cursor: pointer; background: transparent; color: var(--dusk); transition: all .15s;
+}
+.role-toggle button.active-role-super { background: var(--orange); color: #000; }
+.role-toggle button.active-role-admin { background: var(--dusk); color: #fff; }
+
+.content { padding: 22px 24px; flex: 1; }
+
+.notif-tray {
+  position: fixed; top: 72px; right: 24px; width: 320px;
+  background: var(--white); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(20,33,61,.12); z-index: 50; display: none;
+}
+.notif-tray.open { display: block; }
+.notif-header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
+.notif-header strong { font-size: 14px; font-weight: 800; }
+.notif-header span { font-size: 12px; color: var(--dusk); cursor: pointer; }
+.notif-item { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 10px; }
+.notif-item:last-child { border-bottom: none; }
+.notif-icon { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 15px; flex-shrink: 0; }
+.notif-icon.urgent { background: rgba(192,57,43,.1); color: var(--tangerine); }
+.notif-icon.warn { background: rgba(252,163,17,.12); color: #b07800; }
+.notif-icon.info { background: rgba(65,90,119,.1); color: var(--dusk); }
+.notif-text strong { display: block; font-size: 12px; font-weight: 700; margin-bottom: 2px; }
+.notif-text span { font-size: 11px; color: var(--dusk); }
+
+.metrics { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 12px; margin-bottom: 20px; }
+.mc { background: var(--white); border: 1px solid var(--line); border-radius: 10px; padding: 16px; position: relative; overflow: hidden; }
+.mc::after { content: ""; position: absolute; right: -16px; bottom: -20px; width: 72px; height: 72px; border-radius: 50%; border: 10px solid rgba(20,33,61,.06); }
+.mc.urgent::after { border-color: rgba(192,57,43,.14); }
+.mc.healthy::after { border-color: rgba(26,122,46,.14); }
+.mc.primary::after { border-color: rgba(252,163,17,.18); }
+.mc-label { font-size: 11px; font-weight: 800; color: var(--dusk); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
+.mc-value { font-size: 26px; font-weight: 900; color: #000; margin-bottom: 6px; }
+.mc-note { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; display: inline-flex; align-items: center; background: rgba(65,90,119,.1); color: var(--dusk); }
+.mc.urgent .mc-note { background: rgba(192,57,43,.1); color: var(--tangerine); }
+.mc.healthy .mc-note { background: rgba(26,122,46,.1); color: var(--green); }
+.mc.primary .mc-note { background: rgba(252,163,17,.15); color: #7a5200; }
+
+.grid2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid2-equal { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.panel { background: var(--white); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+.panel-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.panel-header h2 { font-size: 15px; font-weight: 800; color: var(--prussian); }
+.panel-header p { font-size: 12px; color: var(--dusk); font-weight: 600; margin-top: 2px; }
+.pill { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--dusk); white-space: nowrap; }
+
+.chart-bars { display: flex; gap: 10px; align-items: flex-end; height: 160px; padding: 0 4px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+.bar-rect { width: 100%; border-radius: 5px 5px 2px 2px; transition: opacity .2s; }
+.bar-rect:hover { opacity: .8; }
+.bar-day { font-size: 10px; font-weight: 800; color: var(--silver); text-align: center; }
+
+.donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.donut-svg { width: 140px; height: 140px; }
+.legend { width: 100%; }
+.leg-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; font-size: 12px; font-weight: 700; }
+.leg-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+.leg-left { display: flex; align-items: center; gap: 7px; }
+
+table { width: 100%; border-collapse: collapse; }
+th { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--dusk); padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+td { padding: 10px 10px; border-bottom: 1px solid rgba(20,33,61,.05); font-size: 13px; font-weight: 600; color: var(--prussian); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(65,90,119,.03); }
+
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+.badge.high { background: rgba(192,57,43,.1); color: var(--tangerine); }
+.badge.medium { background: rgba(252,163,17,.15); color: #7a5200; }
+.badge.low, .badge.approved, .badge.resolved { background: rgba(26,122,46,.1); color: var(--green); }
+.badge.open { background: rgba(252,163,17,.15); color: #7a5200; }
+.badge.suspended { background: rgba(192,57,43,.1); color: var(--tangerine); }
+.badge.monitoring { background: rgba(65,90,119,.12); color: var(--dusk); }
+.badge.unknown { background: rgba(138,155,176,.15); color: var(--silver); }
+
+.action-btn {
+  font: inherit; font-size: 11px; font-weight: 800; padding: 4px 9px; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--white); color: var(--prussian);
+  cursor: pointer; margin-left: 3px; transition: all .12s;
+}
+.action-btn:hover { background: var(--alabaster); }
+.action-btn.resolve { border-color: rgba(26,122,46,.3); color: var(--green); }
+.action-btn.resolve:hover { background: rgba(26,122,46,.08); }
+.action-btn.suspend { border-color: rgba(192,57,43,.3); color: var(--tangerine); }
+.action-btn.suspend:hover { background: rgba(192,57,43,.07); }
+.action-btn.review { border-color: rgba(252,163,17,.4); color: #7a5200; }
+.action-btn.review:hover { background: rgba(252,163,17,.08); }
+
+.locked { opacity: .45; pointer-events: none; position: relative; }
+.lock-overlay { font-size: 11px; color: var(--dusk); font-weight: 700; display: flex; align-items: center; gap: 5px; padding: 6px 10px; background: rgba(65,90,119,.07); border-radius: 7px; margin-bottom: 10px; }
+
+.snap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.snap-card { background: rgba(240,242,245,.7); border: 1px solid var(--line); border-radius: 8px; padding: 13px; }
+.snap-card strong { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--dusk); margin-bottom: 6px; }
+.snap-card span { display: block; font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+.snap-card p { font-size: 11px; color: var(--dusk); font-weight: 600; }
+.snap-card.pos span { color: var(--green); }
+.snap-card.warn span { color: #b07800; }
+.snap-card.danger span { color: var(--tangerine); }
+.snap-card.neutral span { color: var(--prussian); }
+
+.finance-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+.fin-card { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: rgba(240,242,245,.5); }
+.fin-card strong { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--dusk); margin-bottom: 8px; }
+.fin-card span { display: block; font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+.fin-card p { font-size: 11px; color: var(--dusk); font-weight: 600; }
+.fin-card.pos span { color: var(--green); }
+.fin-card.warn span { color: #b07800; }
+.fin-card.danger span { color: var(--tangerine); }
+.fin-card.neutral span { color: var(--prussian); }
+
+.settings-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.setting-card { background: rgba(240,242,245,.6); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+.setting-card strong { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--dusk); margin-bottom: 10px; }
+.setting-card label { font-size: 12px; color: var(--dusk); font-weight: 700; }
+.slider-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.slider-row input[type=range] { flex: 1; }
+.slider-val { font-size: 14px; font-weight: 800; color: var(--prussian); min-width: 32px; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.toggle { width: 36px; height: 20px; background: var(--silver); border-radius: 999px; position: relative; cursor: pointer; transition: background .2s; border: none; }
+.toggle.on { background: var(--green); }
+.toggle::after { content: ""; position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: left .2s; }
+.toggle.on::after { left: 19px; }
+.save-btn { margin-top: 12px; font: inherit; font-size: 12px; font-weight: 800; padding: 7px 16px; border-radius: 7px; border: none; background: var(--prussian); color: var(--white); cursor: pointer; width: 100%; }
+.save-btn:hover { background: #0f1a30; }
+
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--prussian); color: #fff; padding: 10px 16px; border-radius: 9px; font-size: 13px; font-weight: 700; display: none; z-index: 999; align-items: center; gap: 8px; }
+.toast.show { display: flex; }
+
+.super-only-badge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 5px; background: rgba(252,163,17,.2); color: #7a5200; margin-left: 6px; vertical-align: middle; }
+
+@media (max-width: 900px) {
+  .metrics { grid-template-columns: repeat(3, 1fr); }
+  .grid2, .grid2-equal { grid-template-columns: 1fr; }
+  .finance-grid { grid-template-columns: repeat(2,1fr); }
+  .settings-grid { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+
+<h2 class="sr-only" style="position:absolute;left:-9999px">PulseLocal Admin Dashboard — system administration overview with role-based access controls</h2>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">PL</div>
+      <div class="brand-text">
+        <strong>PulseLocal</strong>
+        <span>Admin Web</span>
+      </div>
+    </div>
+    <span class="nav-label">Navigation</span>
+    <nav class="nav" id="sideNav">
+      <a class="active" data-section="overview"><i class="ti ti-layout-dashboard" aria-hidden="true"></i> Overview</a>
+      <a data-section="users"><i class="ti ti-users" aria-hidden="true"></i> Users</a>
+      <a data-section="partners"><i class="ti ti-building-store" aria-hidden="true"></i> Partners</a>
+      <a data-section="operations"><i class="ti ti-truck-delivery" aria-hidden="true"></i> Operations</a>
+      <a data-section="financials"><i class="ti ti-receipt" aria-hidden="true"></i> Financials</a>
+      <a data-section="analytics"><i class="ti ti-chart-bar" aria-hidden="true"></i> Analytics</a>
+      <a data-section="disputes"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Disputes</a>
+      <a data-section="settings" id="settingsNav"><i class="ti ti-settings" aria-hidden="true"></i> Settings <span class="super-only-badge" id="superOnlyBadge">Super</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="role-badge-sidebar">
+        <div class="avatar">AU</div>
+        <div class="info">
+          <strong id="sidebarName">Admin User</strong>
+          <span id="sidebarRole">Platform Administrator</span>
+        </div>
+        <span class="role-pill" id="sidebarPill">SA</span>
+      </div>
+      <button class="logout-btn" onclick="toast('Logged out')"><i class="ti ti-logout" aria-hidden="true"></i> Logout</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <p>PulseLocal Admin</p>
+        <h1>System Administration Dashboard</h1>
+      </div>
+      <div class="search-bar">
+        <i class="ti ti-search" aria-hidden="true"></i>
+        <input type="search" placeholder="Search users, partners, orders…">
+      </div>
+      <div class="topbar-right">
+        <div class="role-toggle" aria-label="Switch admin role preview">
+          <button id="btnSuper" onclick="setRole('super')" class="active-role-super">Super Admin</button>
+          <button id="btnAdmin" onclick="setRole('admin')">Admin</button>
+        </div>
+        <div class="notif-btn" onclick="toggleNotif()" aria-label="Notifications">
+          <i class="ti ti-bell" aria-hidden="true"></i>
+          <span class="notif-dot" id="notifDot"></span>
+        </div>
+        <div class="profile-area">
+          <div class="profile-copy">
+            <strong id="topbarName">Admin User</strong>
+            <span id="topbarRole">Super Admin</span>
+          </div>
+          <div class="avatar-lg">AU</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="notif-tray" id="notifTray">
+      <div class="notif-header">
+        <strong>Alerts <span style="background:rgba(192,57,43,.1);color:var(--tangerine);font-size:10px;padding:2px 7px;border-radius:999px;margin-left:6px;">3 new</span></strong>
+        <span onclick="clearNotifs()">Clear all</span>
+      </div>
+      <div class="notif-item">
+        <div class="notif-icon urgent"><i class="ti ti-alert-circle" aria-hidden="true"></i></div>
+        <div class="notif-text"><strong>76 high-risk orders pending review</strong><span>2 min ago · Operations</span></div>
+      </div>
+      <div class="notif-item">
+        <div class="notif-icon warn"><i class="ti ti-clock" aria-hidden="true"></i></div>
+        <div class="notif-text"><strong>Metro Express Bites — 31 high-risk flags</strong><span>14 min ago · Partners</span></div>
+      </div>
+      <div class="notif-item">
+        <div class="notif-icon info"><i class="ti ti-file-description" aria-hidden="true"></i></div>
+        <div class="notif-text"><strong>DSP-1048 escalated by Mia Collins</strong><span>38 min ago · Disputes</span></div>
+      </div>
+    </div>
+
+    <div class="content">
+      <section class="metrics">
+        <div class="mc">
+          <div class="mc-label">Total Users</div>
+          <div class="mc-value">28,940</div>
+          <div class="mc-note">+8.4% this month</div>
+        </div>
+        <div class="mc healthy">
+          <div class="mc-label">Active Partners</div>
+          <div class="mc-value">412</div>
+          <div class="mc-note">386 approved</div>
+        </div>
+        <div class="mc">
+          <div class="mc-label">Orders Today</div>
+          <div class="mc-value">1,284</div>
+          <div class="mc-note">91% on track</div>
+        </div>
+        <div class="mc urgent">
+          <div class="mc-label">High-Risk Orders</div>
+          <div class="mc-value">76</div>
+          <div class="mc-note"><i class="ti ti-alert-circle" aria-hidden="true" style="font-size:11px;margin-right:3px"></i>Needs review</div>
+        </div>
+        <div class="mc urgent">
+          <div class="mc-label">Open Disputes</div>
+          <div class="mc-value">23</div>
+          <div class="mc-note">7 escalated</div>
+        </div>
+        <div class="mc primary">
+          <div class="mc-label">Est. Revenue</div>
+          <div class="mc-value">$48.6K</div>
+          <div class="mc-note">Today estimate</div>
+        </div>
+      </section>
+
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-header">
+            <div><h2>Fulfillment Risk Trend</h2><p>Weekly risk volume by day</p></div>
+            <span class="pill">Mon – Sun</span>
+          </div>
+          <div class="chart-bars" id="riskChart"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div><h2>Risk Distribution</h2><p>Checkout-level prediction mix</p></div>
+          </div>
+          <div class="donut-wrap">
+            <svg class="donut-svg" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="52" fill="none" stroke="#1a7a2e" stroke-width="22" stroke-dasharray="157 327" stroke-dashoffset="0"/>
+              <circle cx="70" cy="70" r="52" fill="none" stroke="#fca311" stroke-width="22" stroke-dasharray="82 327" stroke-dashoffset="-157"/>
+              <circle cx="70" cy="70" r="52" fill="none" stroke="#c0392b" stroke-width="22" stroke-dasharray="59 327" stroke-dashoffset="-239"/>
+              <circle cx="70" cy="70" r="52" fill="none" stroke="#b0bec8" stroke-width="22" stroke-dasharray="29 327" stroke-dashoffset="-298"/>
+              <text x="70" y="67" text-anchor="middle" font-size="13" font-weight="800" fill="#14213d">Risk</text>
+              <text x="70" y="81" text-anchor="middle" font-size="10" fill="#415a77">Mix</text>
+            </svg>
+            <div class="legend">
+              <div class="leg-row"><span class="leg-left"><span class="leg-dot" style="background:#1a7a2e"></span><span class="badge low">Low</span></span><span>48%</span></div>
+              <div class="leg-row"><span class="leg-left"><span class="leg-dot" style="background:#fca311"></span><span class="badge medium">Medium</span></span><span>25%</span></div>
+              <div class="leg-row"><span class="leg-left"><span class="leg-dot" style="background:#c0392b"></span><span class="badge high">High</span></span><span>18%</span></div>
+              <div class="leg-row"><span class="leg-left"><span class="leg-dot" style="background:#b0bec8"></span><span class="badge unknown">Unknown</span></span><span>9%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-header">
+            <div><h2>Recent High-Risk Orders</h2><p>Orders flagged for review</p></div>
+          </div>
+          <table>
+            <thead><tr><th>Order</th><th>Customer</th><th>Merchant</th><th>Score</th><th>Risk</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="ordersTable"></tbody>
+          </table>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div><h2>Partner Performance</h2><p>Merchant fulfillment health</p></div>
+          </div>
+          <table>
+            <thead><tr><th>Merchant</th><th>Prep</th><th>Success</th><th>Risk</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="partnersTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid2-equal">
+        <div class="panel">
+          <div class="panel-header">
+            <div><h2>Dispute Queue</h2><p>Cases awaiting action</p></div>
+          </div>
+          <table>
+            <thead><tr><th>ID</th><th>User</th><th>Order</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="disputeTable"></tbody>
+          </table>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div><h2>Operational Snapshot</h2><p>Platform operations at a glance</p></div>
+          </div>
+          <div class="snap-grid">
+            <div class="snap-card warn"><strong>Pending</strong><span>184</span><p>Awaiting partner</p></div>
+            <div class="snap-card pos"><strong>Completed</strong><span>1,046</span><p>Closed today</p></div>
+            <div class="snap-card danger"><strong>Delayed</strong><span>38</span><p>Past handoff</p></div>
+            <div class="snap-card danger"><strong>Failed</strong><span>14</span><p>Unfulfilled</p></div>
+            <div class="snap-card neutral"><strong>Rider ratio</strong><span>1:7.4</span><p>Active zones</p></div>
+            <div class="snap-card neutral"><strong>Avg distance</strong><span>3.8 mi</span><p>Estimated</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-header">
+          <div><h2>Financial Summary</h2><p>Daily platform totals</p></div>
+          <span class="pill">Today</span>
+        </div>
+        <div class="finance-grid">
+          <div class="fin-card neutral"><strong>Gross Merch. Value</strong><span>$324.8K</span><p>Total order value</p></div>
+          <div class="fin-card pos"><strong>Platform Commission</strong><span>$52.1K</span><p>Before refunds</p></div>
+          <div class="fin-card danger"><strong>Refund Amount</strong><span>$3.5K</span><p>Open + processed</p></div>
+          <div class="fin-card warn"><strong>Net Revenue Est.</strong><span>$48.6K</span><p>Commission less refunds</p></div>
+        </div>
+      </div>
+
+      <div class="panel" id="settingsPanel" style="margin-bottom:16px">
+        <div class="panel-header">
+          <div><h2>System Settings <span class="super-only-badge">Super Admin only</span></h2><p>Platform configuration controls</p></div>
+        </div>
+        <div id="settingsLock" class="lock-overlay" style="display:none">
+          <i class="ti ti-lock" aria-hidden="true"></i> These controls require Super Admin access. Switch role to enable.
+        </div>
+        <div id="settingsControls" class="settings-grid">
+          <div class="setting-card">
+            <strong>Risk Threshold</strong>
+            <label>Review trigger score</label>
+            <div class="slider-row">
+              <input type="range" min="0.5" max="0.99" step="0.01" value="0.75" id="riskSlider" oninput="document.getElementById('riskVal').textContent=parseFloat(this.value).toFixed(2)">
+              <span class="slider-val" id="riskVal">0.75</span>
+            </div>
+          </div>
+          <div class="setting-card">
+            <strong>Fallback Mode</strong>
+            <label>Unknown-risk handling</label>
+            <div class="toggle-row">
+              <span style="font-size:13px;color:var(--prussian);font-weight:700" id="fallbackLabel">Ready (off)</span>
+              <button class="toggle" id="fallbackToggle" onclick="toggleFallback()" aria-label="Toggle fallback mode"></button>
+            </div>
+          </div>
+          <div class="setting-card">
+            <strong>System Status</strong>
+            <label>Override status flag</label>
+            <div class="toggle-row">
+              <span style="font-size:13px;color:var(--green);font-weight:800" id="statusLabel"><i class="ti ti-circle-check" aria-hidden="true"></i> Stable</span>
+              <button class="save-btn" style="width:auto;padding:5px 12px;font-size:11px" onclick="toast('Status saved')">Save</button>
+            </div>
+          </div>
+          <div class="setting-card">
+            <strong>Admin Accounts</strong>
+            <label>Manage admin users</label>
+            <button class="save-btn" style="margin-top:8px" onclick="toast('Admin management opened')"><i class="ti ti-user-plus" aria-hidden="true"></i> Manage Admins</button>
+          </div>
+          <div class="setting-card">
+            <strong>COD Risk Boost</strong>
+            <label>Extra weight for cash orders</label>
+            <div class="slider-row">
+              <input type="range" min="0" max="0.3" step="0.01" value="0.12" id="codSlider" oninput="document.getElementById('codVal').textContent='+'+parseFloat(this.value).toFixed(2)">
+              <span class="slider-val" id="codVal">+0.12</span>
+            </div>
+          </div>
+          <div class="setting-card">
+            <strong>Save Config</strong>
+            <label>Apply all threshold changes</label>
+            <button class="save-btn" style="margin-top:8px" onclick="toast('Configuration saved ✓')"><i class="ti ti-device-floppy" aria-hidden="true"></i> Save All Settings</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"><i class="ti ti-check" aria-hidden="true"></i><span id="toastMsg"></span></div>
+
+<script>
+const BARS = [
+  {day:'Mon',h:42,type:'low'},
+  {day:'Tue',h:56,type:'mid'},
+  {day:'Wed',h:48,type:'low'},
+  {day:'Thu',h:69,type:'high'},
+  {day:'Fri',h:58,type:'mid'},
+  {day:'Sat',h:78,type:'high'},
+  {day:'Sun',h:72,type:'high'}
+];
+const barColors = {low:'#1a7a2e', mid:'#415a77', high:'#c0392b'};
+const chart = document.getElementById('riskChart');
+BARS.forEach(b => {
+  chart.innerHTML += `<div class="bar-col"><div class="bar-rect" style="height:${b.h}%;background:${barColors[b.type]};flex:1 0 auto;max-height:${b.h}%"></div><div class="bar-day">${b.day}</div></div>`;
+});
+
+const orders = [
+  {id:'#PL-88421',cust:'Mia Collins',merch:'Harbor Noodle Bar',score:.92,risk:'high',status:'open'},
+  {id:'#PL-88409',cust:'Andre Hill',merch:'Green Bowl Market',score:.87,risk:'high',status:'monitoring'},
+  {id:'#PL-88396',cust:'Jenna Stone',merch:'Northside Bakery',score:.81,risk:'high',status:'resolved'},
+  {id:'#PL-88372',cust:'Leo Santos',merch:'Cedar Grill',score:.78,risk:'medium',status:'open'},
+];
+
+const partners = [
+  {name:'Harbor Noodle Bar',prep:'19 min',rate:'96.2%',risk:12,status:'approved'},
+  {name:'Cedar Grill',prep:'26 min',rate:'88.9%',risk:18,status:'medium'},
+  {name:'Northside Bakery',prep:'15 min',rate:'98.4%',risk:4,status:'approved'},
+  {name:'Metro Express Bites',prep:'34 min',rate:'72.1%',risk:31,status:'suspended'},
+];
+
+const disputes = [
+  {id:'DSP-1048',user:'Mia Collins',order:'#PL-88421',reason:'Late delivery',status:'open'},
+  {id:'DSP-1045',user:'Andre Hill',order:'#PL-88409',reason:'Missing item',status:'monitoring'},
+  {id:'DSP-1038',user:'Tara Miles',order:'#PL-88251',reason:'Refund request',status:'resolved'},
+];
+
+let currentRole = 'super';
+
+function statusBadge(s) {
+  return `<span class="badge ${s}">${s==='monitoring'?'Monitoring':s.charAt(0).toUpperCase()+s.slice(1)}</span>`;
+}
+
+function renderOrders() {
+  const t = document.getElementById('ordersTable');
+  const canAct = currentRole === 'super';
+  t.innerHTML = orders.map(o => `<tr>
+    <td style="font-size:12px">${o.id}</td>
+    <td>${o.cust}</td>
+    <td style="font-size:12px">${o.merch}</td>
+    <td><strong>${o.score}</strong></td>
+    <td>${statusBadge(o.risk)}</td>
+    <td>${statusBadge(o.status)}</td>
+    <td>
+      <button class="action-btn review" onclick="toast('Reviewing ${o.id}')">Review</button>
+      ${canAct ? `<button class="action-btn resolve" onclick="toast('${o.id} resolved')">Resolve</button>` : ''}
+    </td>
+  </tr>`).join('');
+}
+
+function renderPartners() {
+  const t = document.getElementById('partnersTable');
+  const canSuspend = currentRole === 'super';
+  t.innerHTML = partners.map(p => `<tr>
+    <td style="font-size:12px">${p.name}</td>
+    <td>${p.prep}</td>
+    <td>${p.rate}</td>
+    <td>${p.risk}</td>
+    <td>${statusBadge(p.status)}</td>
+    <td>
+      <button class="action-btn review" onclick="toast('Reviewing ${p.name}')">View</button>
+      ${canSuspend ? `<button class="action-btn suspend" onclick="toast('${p.name} actioned')">Suspend</button>` : ''}
+    </td>
+  </tr>`).join('');
+}
+
+function renderDisputes() {
+  const t = document.getElementById('disputeTable');
+  const canResolve = currentRole === 'super';
+  t.innerHTML = disputes.map(d => `<tr>
+    <td style="font-size:12px">${d.id}</td>
+    <td>${d.user}</td>
+    <td style="font-size:12px">${d.order}</td>
+    <td style="font-size:12px">${d.reason}</td>
+    <td>${statusBadge(d.status)}</td>
+    <td>
+      <button class="action-btn review" onclick="toast('Escalating ${d.id}')">Escalate</button>
+      ${canResolve ? `<button class="action-btn resolve" onclick="toast('${d.id} resolved')">Resolve</button>` : ''}
+    </td>
+  </tr>`).join('');
+}
+
+function setRole(role) {
+  currentRole = role;
+  const isSuper = role === 'super';
+  document.getElementById('btnSuper').className = isSuper ? 'active-role-super' : '';
+  document.getElementById('btnAdmin').className = !isSuper ? 'active-role-admin' : '';
+  document.getElementById('topbarRole').textContent = isSuper ? 'Super Admin' : 'Admin';
+  document.getElementById('sidebarPill').textContent = isSuper ? 'SA' : 'A';
+  document.getElementById('sidebarPill').className = 'role-pill ' + (isSuper ? 'super' : 'admin');
+  document.getElementById('sidebarRole').textContent = isSuper ? 'Platform Super Admin' : 'Platform Admin';
+  const lock = document.getElementById('settingsLock');
+  const ctrl = document.getElementById('settingsControls');
+  lock.style.display = isSuper ? 'none' : 'flex';
+  ctrl.style.opacity = isSuper ? '1' : '.35';
+  ctrl.style.pointerEvents = isSuper ? 'all' : 'none';
+  renderOrders(); renderPartners(); renderDisputes();
+  toast(isSuper ? 'Switched to Super Admin — full access' : 'Switched to Admin — read + limited actions');
+}
+
+function toggleNotif() {
+  const t = document.getElementById('notifTray');
+  t.classList.toggle('open');
+}
+
+function clearNotifs() {
+  document.getElementById('notifTray').classList.remove('open');
+  document.getElementById('notifDot').style.display = 'none';
+  toast('All notifications cleared');
+}
+
+let fallbackOn = false;
+function toggleFallback() {
+  fallbackOn = !fallbackOn;
+  const btn = document.getElementById('fallbackToggle');
+  const lbl = document.getElementById('fallbackLabel');
+  btn.className = 'toggle' + (fallbackOn ? ' on' : '');
+  lbl.textContent = fallbackOn ? 'Active (on)' : 'Ready (off)';
+  lbl.style.color = fallbackOn ? 'var(--tangerine)' : 'var(--prussian)';
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+document.getElementById('sideNav').addEventListener('click', e => {
+  const a = e.target.closest('a');
+  if (!a) return;
+  document.querySelectorAll('#sideNav a').forEach(x => x.classList.remove('active'));
+  a.classList.add('active');
+});
+
+document.addEventListener('click', e => {
+  const tray = document.getElementById('notifTray');
+  if (!tray.contains(e.target) && !e.target.closest('.notif-btn')) tray.classList.remove('open');
+});
+
+renderOrders(); renderPartners(); renderDisputes();
+</script>

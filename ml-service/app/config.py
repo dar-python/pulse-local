@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     log_level: str = "debug"
 
     mock_prediction_enabled: bool = True
-    model_path: str = "./models/fulfillment_risk_model.joblib"
+    model_path: str = "./app/models/pulselocal_logistic_regression_model.joblib"
 
     risk_low_max: float = 0.39
     risk_medium_max: float = 0.69

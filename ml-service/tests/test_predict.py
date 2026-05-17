@@ -38,6 +38,18 @@ def test_health_endpoint_returns_healthy_status():
     }
 
 
+def test_app_startup_warms_model_and_metadata(monkeypatch):
+    calls = []
+
+    monkeypatch.setattr(ml_app, "load_model", lambda: calls.append("model"))
+    monkeypatch.setattr(ml_app, "load_metadata", lambda: calls.append("metadata"))
+
+    with TestClient(ml_app.app):
+        pass
+
+    assert calls == ["model", "metadata"]
+
+
 def test_predict_uses_model_pipeline_with_public_contract_adapter(monkeypatch):
     class FakePipeline:
         def __init__(self):

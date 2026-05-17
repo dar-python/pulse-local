@@ -1,4 +1,6 @@
 import json
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
@@ -9,9 +11,17 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
 
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    load_model()
+    load_metadata()
+    yield
+
+
 app = FastAPI(
     title="PulseLocal ML Service",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 
