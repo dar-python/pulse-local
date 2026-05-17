@@ -7,6 +7,12 @@ for checkout inputs. Flutter must not call this service directly.
 This service loads the trained PulseLocal Logistic Regression sklearn Pipeline
 from `app/models/pulselocal_logistic_regression_model.joblib`.
 
+If `MODEL_PATH` is set for local scripts or Docker, point it at:
+
+```dotenv
+MODEL_PATH=./app/models/pulselocal_logistic_regression_model.joblib
+```
+
 ## Local Setup
 
 ```powershell
@@ -20,6 +26,9 @@ pip install -r requirements.txt
 ```powershell
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
 ```
+
+The Dockerfile also starts `app.main:app` explicitly so the container serves the
+current FastAPI app module.
 
 ## Test
 
