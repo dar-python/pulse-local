@@ -1,9 +1,9 @@
 import 'package:flutter/widgets.dart';
 
-import '../features/checkout_risk/screens/checkout_risk_screen.dart';
+import '../features/auth/login_screen.dart';
 
 class AppRouter {
   const AppRouter._();
 
-  static Widget get home => const CheckoutRiskScreen();
+  static Widget get home => const LoginScreen();
 }
