@@ -30,9 +30,13 @@ RUN composer install \
 COPY . .
 
 RUN composer dump-autoload --optimize \
-    && mkdir -p storage/logs bootstrap/cache \
+    && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
+
+COPY docker/php/entrypoint.sh /usr/local/bin/pulselocal-laravel-entrypoint
+RUN chmod +x /usr/local/bin/pulselocal-laravel-entrypoint
 
 EXPOSE 9000
 
+ENTRYPOINT ["pulselocal-laravel-entrypoint"]
 CMD ["php-fpm"]

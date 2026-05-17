@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/risk_color_mapper.dart';
 import '../../domain/entities/checkout_risk_result.dart';
 
@@ -58,20 +59,21 @@ class RiskResultCard extends StatelessWidget {
               const SizedBox(height: 12),
               DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: AppColors.alabaster,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: AppColors.silver),
                 ),
                 child: const Padding(
                   padding: EdgeInsets.all(12),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.info_outline, size: 20),
+                      Icon(Icons.info_outline, size: 20, color: AppColors.dusk),
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Prediction service unavailable. Laravel returned a fallback result, so checkout can proceed.',
+                          style: TextStyle(color: AppColors.prussian),
                         ),
                       ),
                     ],
