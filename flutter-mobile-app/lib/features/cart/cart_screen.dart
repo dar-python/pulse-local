@@ -28,6 +28,18 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cartController = _cartController;
+    if (cartController != null) {
+      return AnimatedBuilder(
+        animation: cartController,
+        builder: (context, _) => _buildScaffold(context),
+      );
+    }
+
+    return _buildScaffold(context);
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     final restaurant =
         _cartController?.restaurant ??
         _restaurant ??
@@ -86,16 +98,70 @@ class CartScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               if (isCartEmpty)
-                const _EmptyCartState()
+                Column(
+                  children: [
+                    const _EmptyCartState(),
+                    const SizedBox(height: 14),
+                    PrimaryButton(
+                      key: const Key('cart_checkout_button'),
+                      label: 'Proceed to Checkout',
+                      onPressed: null,
+                    ),
+                  ],
+                )
               else ...[
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Items',
+                        style: TextStyle(
+                          color: AppColors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      key: const Key('cart_clear_all'),
+                      onPressed: () => _confirmClearCart(context),
+                      icon: const Icon(
+                        Icons.delete_sweep_outlined,
+                        color: AppColors.orange,
+                        size: 16,
+                      ),
+                      label: const Text(
+                        'Clear cart',
+                        style: TextStyle(
+                          color: AppColors.orange,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 for (final cartItem in items)
-                  _CartItemRow(
+                  _InteractiveCartItemRow(
+                    itemId: cartItem.item.id,
                     emoji: cartItem.item.emoji,
                     imageAsset: cartItem.item.imageAsset,
                     name: cartItem.item.name,
                     price: cartItem.item.price,
                     quantity: cartItem.quantity,
                     lineTotal: cartItem.lineTotal,
+                    onIncrease: _cartController == null
+                        ? null
+                        : () => _cartController.increaseItem(
+                            restaurant: restaurant,
+                            item: cartItem.item,
+                          ),
+                    onDecrease: _cartController == null
+                        ? null
+                        : () => _cartController.decreaseItem(cartItem.item.id),
+                    onRemove: _cartController == null
+                        ? null
+                        : () => _cartController.removeItem(cartItem.item.id),
                   ),
                 const SizedBox(height: 12),
                 AppCard(
@@ -168,6 +234,7 @@ class CartScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 PrimaryButton(
+                  key: const Key('cart_checkout_button'),
                   label: 'Proceed to Checkout →',
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
@@ -189,6 +256,55 @@ class CartScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmClearCart(BuildContext context) async {
+    final shouldClear = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.prussian,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: AppColors.orange.withAlpha(96)),
+          ),
+          title: const Text(
+            'Clear all items from your cart?',
+            style: TextStyle(
+              color: AppColors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: AppColors.silver,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                'Clear Cart',
+                style: TextStyle(
+                  color: AppColors.orange,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldClear == true) {
+      _cartController?.clear();
+    }
   }
 }
 
@@ -266,22 +382,30 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _CartItemRow extends StatelessWidget {
-  const _CartItemRow({
+class _InteractiveCartItemRow extends StatelessWidget {
+  const _InteractiveCartItemRow({
+    required this.itemId,
     required this.emoji,
     required this.imageAsset,
     required this.name,
     required this.price,
     required this.quantity,
     required this.lineTotal,
+    required this.onIncrease,
+    required this.onDecrease,
+    required this.onRemove,
   });
 
+  final int itemId;
   final String emoji;
   final String? imageAsset;
   final String name;
   final int price;
   final int quantity;
   final int lineTotal;
+  final VoidCallback? onIncrease;
+  final VoidCallback? onDecrease;
+  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -326,21 +450,96 @@ class _CartItemRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '₱$price × $quantity',
+                  'P$price x $quantity',
                   style: const TextStyle(color: AppColors.silver, fontSize: 11),
                 ),
               ],
             ),
           ),
-          Text(
-            '₱$lineTotal',
-            style: const TextStyle(
-              color: AppColors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-            ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'P$lineTotal',
+                style: const TextStyle(
+                  color: AppColors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _CartIconButton(
+                    key: Key('cart_item_decrease_$itemId'),
+                    icon: Icons.remove_rounded,
+                    onTap: onDecrease,
+                  ),
+                  Container(
+                    width: 28,
+                    alignment: Alignment.center,
+                    child: Text(
+                      '$quantity',
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  _CartIconButton(
+                    key: Key('cart_item_increase_$itemId'),
+                    icon: Icons.add_rounded,
+                    onTap: onIncrease,
+                  ),
+                  const SizedBox(width: 4),
+                  _CartIconButton(
+                    key: Key('cart_item_remove_$itemId'),
+                    icon: Icons.close_rounded,
+                    onTap: onRemove,
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CartIconButton extends StatelessWidget {
+  const _CartIconButton({super.key, required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(7),
+      onTap: onTap,
+      child: Container(
+        width: 26,
+        height: 26,
+        decoration: BoxDecoration(
+          color: enabled ? AppColors.white.withAlpha(18) : AppColors.dusk,
+          borderRadius: BorderRadius.circular(7),
+          border: Border.all(
+            color: enabled
+                ? AppColors.white.withAlpha(38)
+                : AppColors.white.withAlpha(12),
+          ),
+        ),
+        child: Icon(
+          icon,
+          color: enabled ? AppColors.orange : AppColors.silver,
+          size: 16,
+        ),
       ),
     );
   }

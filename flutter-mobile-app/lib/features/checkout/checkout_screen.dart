@@ -154,27 +154,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       errorMessage: _riskErrorMessage,
                     ),
                     const SizedBox(height: 10),
-                    const Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        FactorChip(
-                          label: 'High rider pressure',
-                          color: AppColors.tangerine,
-                        ),
-                        FactorChip(
-                          label: 'Moderate traffic',
-                          color: AppColors.orange,
-                        ),
-                        FactorChip(
-                          label: 'Merchant ready',
-                          color: AppColors.green,
-                        ),
-                        FactorChip(
-                          label: 'Rainy weather',
-                          color: AppColors.tangerine,
-                        ),
-                      ],
+                    _DelayReasonList(
+                      reasons: _topDelayReasons,
+                      etaText: _etaAdvisory,
                     ),
                   ],
                 ),
@@ -197,29 +179,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     const SizedBox(height: 10),
                     _AdvisoryLine(
                       icon: _riskAdvisoryIcon,
-                      text: _primaryRiskAdvisory,
+                      text: _simplifiedAdvisory,
                     ),
                     const SizedBox(height: 8),
-                    if (_secondaryRiskAdvisory != null) ...[
-                      _AdvisoryLine(
-                        icon: Icons.sync_alt_rounded,
-                        text: _secondaryRiskAdvisory!,
-                      ),
-                      const SizedBox(height: 8),
-                    ],
                     _AdvisoryLine(
                       icon: Icons.schedule_rounded,
                       text: _etaAdvisory,
-                    ),
-                    const SizedBox(height: 8),
-                    const _AdvisoryLine(
-                      icon: Icons.account_balance_wallet_rounded,
-                      text: 'Prepayment recommended to secure your order slot',
-                    ),
-                    const SizedBox(height: 8),
-                    const _AdvisoryLine(
-                      icon: Icons.notifications_active_outlined,
-                      text: 'Merchant alerted to begin preparation immediately',
                     ),
                   ],
                 ),
@@ -405,7 +370,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return Icons.insights_rounded;
   }
 
-  String get _primaryRiskAdvisory {
+  List<RiskAdvisoryReason> get _topDelayReasons {
+    return (_riskPrediction?.advisoryReasons ?? const <RiskAdvisoryReason>[])
+        .where(
+          (reason) => reason.isDelayReason && reason.label.trim().isNotEmpty,
+        )
+        .take(2)
+        .toList(growable: false);
+  }
+
+  String get _simplifiedAdvisory {
     if (_isRiskLoading) {
       return 'Calculating fulfillment risk through Laravel before checkout.';
     }
@@ -418,22 +392,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return 'Fallback risk mode active. You can still place your order.';
     }
 
-    return prediction?.recommendation ??
-        'Risk prediction is unavailable right now. You can still place your order.';
-  }
-
-  String? get _secondaryRiskAdvisory {
-    final errorMessage = _riskErrorMessage;
-    if (errorMessage != null) {
-      return errorMessage;
+    final advisoryMessage = prediction?.advisoryMessage.trim();
+    if (advisoryMessage != null && advisoryMessage.isNotEmpty) {
+      return advisoryMessage;
     }
 
-    final prediction = _riskPrediction;
-    if (prediction == null) {
-      return null;
+    if (_displayRisk.label.toLowerCase() == 'low') {
+      return 'Low risk. Conditions look favorable for this order.';
     }
 
-    return 'Risk source: ${prediction.source}';
+    final reasons = _topDelayReasons;
+    if (reasons.isEmpty) {
+      return 'No major delay reason detected for this order.';
+    }
+
+    return 'Possible delay because of ${_reasonPhrase(reasons)}.';
   }
 
   String get _etaAdvisory {
@@ -447,6 +420,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
 
     return 'Adjusted ETA: $etaRange based on the current checkout risk.';
+  }
+
+  String _reasonPhrase(List<RiskAdvisoryReason> reasons) {
+    final phrases = reasons
+        .map((reason) {
+          return switch (reason.code) {
+            'stormy_weather' || 'rainy_weather' => 'bad weather',
+            'heavy_traffic' => 'heavy traffic',
+            'medium_traffic' => 'moderate traffic',
+            'long_preparation' => 'longer preparation time',
+            'long_distance' => 'a farther delivery address',
+            'limited_rider_availability' => 'limited rider availability',
+            'peak_hour' => 'peak-hour timing',
+            _ => reason.label.toLowerCase().replaceAll('.', ''),
+          };
+        })
+        .toList(growable: false);
+
+    if (phrases.length == 1) {
+      return phrases.single;
+    }
+
+    return '${phrases.first} and ${phrases[1]}';
   }
 
   void _selectPaymentMethod(String paymentMethod) {
@@ -805,6 +801,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ? RiskColorMapper.labelForScore(prediction.riskPercent)
           : rawLevel,
       recommendation: prediction.recommendation,
+      advisoryMessage: _simplifiedAdvisory,
+      advisoryReasons: _topDelayReasons,
     );
   }
 }
@@ -866,6 +864,71 @@ class _RiskSummary extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DelayReasonList extends StatelessWidget {
+  const _DelayReasonList({required this.reasons, required this.etaText});
+
+  final List<RiskAdvisoryReason> reasons;
+  final String etaText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.white.withAlpha(10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.white.withAlpha(18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CompactRiskLine(icon: Icons.schedule_rounded, text: etaText),
+          if (reasons.isNotEmpty) ...[
+            const SizedBox(height: 9),
+            for (final reason in reasons) ...[
+              _CompactRiskLine(
+                icon: Icons.warning_amber_rounded,
+                text: reason.label,
+              ),
+              if (reason != reasons.last) const SizedBox(height: 6),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactRiskLine extends StatelessWidget {
+  const _CompactRiskLine({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: AppColors.orange, size: 15),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: AppColors.alabaster,
+              fontSize: 11,
+              height: 1.4,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

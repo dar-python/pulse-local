@@ -1,6 +1,7 @@
 import '../../../core/models/cart_item.dart';
 import '../../../core/models/menu_item.dart';
 import '../../../core/models/restaurant.dart';
+import '../../checkout_risk/models/risk_prediction_response.dart';
 
 class RestaurantMenu {
   const RestaurantMenu({required this.restaurant, required this.items});
@@ -94,11 +95,15 @@ class FoodPulseOrderRisk {
     required this.score,
     required this.level,
     required this.recommendation,
+    this.advisoryMessage = '',
+    this.advisoryReasons = const [],
   });
 
   final int score;
   final String level;
   final String recommendation;
+  final String advisoryMessage;
+  final List<RiskAdvisoryReason> advisoryReasons;
 
   factory FoodPulseOrderRisk.fromJson(Map<String, dynamic>? json) {
     final riskScore = json?['risk_score'];
@@ -111,6 +116,11 @@ class FoodPulseOrderRisk {
       recommendation:
           json?['recommendation']?.toString() ??
           'No recommendation was returned.',
+      advisoryMessage: json?['advisory_message']?.toString() ?? '',
+      advisoryReasons: (json?['advisory_reasons'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(RiskAdvisoryReason.fromJson)
+          .toList(growable: false),
     );
   }
 }

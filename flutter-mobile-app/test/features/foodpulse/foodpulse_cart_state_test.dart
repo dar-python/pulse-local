@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse_local_app/core/data/mock_foodpulse_data.dart';
 import 'package:pulse_local_app/core/models/menu_item.dart';
 import 'package:pulse_local_app/core/models/restaurant.dart';
+import 'package:pulse_local_app/features/cart/cart_screen.dart';
+import 'package:pulse_local_app/features/cart/foodpulse_cart_controller.dart';
 import 'package:pulse_local_app/features/checkout/repositories/foodpulse_checkout_risk_repository.dart';
 import 'package:pulse_local_app/features/checkout_risk/models/checkout_risk_request.dart';
 import 'package:pulse_local_app/features/checkout_risk/models/risk_prediction_response.dart';
@@ -10,6 +12,7 @@ import 'package:pulse_local_app/features/foodpulse/models/foodpulse_order.dart';
 import 'package:pulse_local_app/features/foodpulse/repositories/foodpulse_repository.dart';
 import 'package:pulse_local_app/features/home/home_screen.dart';
 import 'package:pulse_local_app/features/restaurant/restaurant_screen.dart';
+import 'package:pulse_local_app/shared/widgets/primary_button.dart';
 
 void main() {
   testWidgets('adding a menu item starts from an empty cart', (tester) async {
@@ -128,6 +131,133 @@ void main() {
       'Chickenjoy Meal',
     );
     expect(repository.checkoutRequests.single.items.single.quantity, 1);
+  });
+
+  testWidgets('cart controls increase and decrease item quantity', (
+    tester,
+  ) async {
+    final controller = FoodPulseCartController()
+      ..addItem(
+        restaurant: MockFoodPulseData.restaurants.first,
+        item: _porkSinigang,
+      );
+
+    await tester.pumpWidget(
+      _wrapped(
+        repository: _FakeFoodPulseRepository(),
+        child: CartScreen(
+          restaurant: MockFoodPulseData.restaurants.first,
+          cartController: controller,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('cart_item_increase_1')));
+    await tester.pumpAndSettle();
+
+    expect(controller.totalQuantity, 2);
+    expect(find.textContaining('370'), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('cart_item_decrease_1')));
+    await tester.pumpAndSettle();
+
+    expect(controller.totalQuantity, 1);
+    expect(find.textContaining('370'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('cart_item_decrease_1')));
+    await tester.pumpAndSettle();
+
+    expect(controller.isEmpty, isTrue);
+    expect(find.text('Your cart is empty.'), findsOneWidget);
+  });
+
+  testWidgets('cart controls remove an individual item', (tester) async {
+    final controller = FoodPulseCartController()
+      ..addItem(
+        restaurant: MockFoodPulseData.restaurants.first,
+        item: _porkSinigang,
+      );
+
+    await tester.pumpWidget(
+      _wrapped(
+        repository: _FakeFoodPulseRepository(),
+        child: CartScreen(
+          restaurant: MockFoodPulseData.restaurants.first,
+          cartController: controller,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('cart_item_remove_1')));
+    await tester.pumpAndSettle();
+
+    expect(controller.isEmpty, isTrue);
+    expect(find.text('Pork Sinigang'), findsNothing);
+    expect(find.text('Your cart is empty.'), findsOneWidget);
+  });
+
+  testWidgets('clear cart asks for confirmation before removing all items', (
+    tester,
+  ) async {
+    final controller = FoodPulseCartController()
+      ..addItem(
+        restaurant: MockFoodPulseData.restaurants.first,
+        item: _porkSinigang,
+      )
+      ..addItem(
+        restaurant: MockFoodPulseData.restaurants.first,
+        item: _chickenjoy,
+      );
+
+    await tester.pumpWidget(
+      _wrapped(
+        repository: _FakeFoodPulseRepository(),
+        child: CartScreen(
+          restaurant: MockFoodPulseData.restaurants.first,
+          cartController: controller,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('cart_clear_all')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Clear all items from your cart?'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(controller.totalQuantity, 2);
+
+    await tester.tap(find.byKey(const Key('cart_clear_all')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear Cart'));
+    await tester.pumpAndSettle();
+
+    expect(controller.isEmpty, isTrue);
+    expect(find.text('Your cart is empty.'), findsOneWidget);
+  });
+
+  testWidgets('checkout button is disabled when cart is empty', (tester) async {
+    await tester.pumpWidget(
+      _wrapped(
+        repository: _FakeFoodPulseRepository(),
+        child: CartScreen(
+          restaurant: MockFoodPulseData.restaurants.first,
+          cartController: FoodPulseCartController(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final checkoutButton = tester.widget<PrimaryButton>(
+      find.byKey(const Key('cart_checkout_button')),
+    );
+
+    expect(checkoutButton.onPressed, isNull);
   });
 
   testWidgets('adding from another restaurant prompts before clearing cart', (

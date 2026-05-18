@@ -13,6 +13,7 @@ import 'package:pulse_local_app/features/foodpulse/models/foodpulse_order.dart';
 import 'package:pulse_local_app/features/foodpulse/repositories/foodpulse_repository.dart';
 import 'package:pulse_local_app/features/home/home_screen.dart';
 import 'package:pulse_local_app/features/order/confirmed_screen.dart';
+import 'package:pulse_local_app/shared/widgets/primary_button.dart';
 import 'package:pulse_local_app/features/restaurant/restaurant_screen.dart';
 
 void main() {
@@ -73,7 +74,11 @@ void main() {
     );
 
     expect(find.text('Your cart is empty.'), findsOneWidget);
-    expect(find.textContaining('Proceed to Checkout'), findsNothing);
+    final checkoutButton = tester.widget<PrimaryButton>(
+      find.byKey(const Key('cart_checkout_button')),
+    );
+    expect(checkoutButton.label, 'Proceed to Checkout');
+    expect(checkoutButton.onPressed, isNull);
 
     final repository = _FakeFoodPulseRepository();
     await tester.pumpWidget(

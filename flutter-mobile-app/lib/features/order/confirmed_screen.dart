@@ -258,6 +258,32 @@ class ConfirmedScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (order.risk.advisoryMessage.trim().isNotEmpty) ...[
+                      const SizedBox(height: 9),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 11,
+                          vertical: 9,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.orange.withAlpha(18),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.orange.withAlpha(42),
+                          ),
+                        ),
+                        child: Text(
+                          order.risk.advisoryMessage,
+                          style: const TextStyle(
+                            color: AppColors.alabaster,
+                            fontSize: 11,
+                            height: 1.45,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
