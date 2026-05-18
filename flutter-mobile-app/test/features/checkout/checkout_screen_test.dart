@@ -2,11 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pulse_local_app/core/data/mock_foodpulse_data.dart';
+import 'package:pulse_local_app/core/models/restaurant.dart';
 import 'package:pulse_local_app/core/network/api_exception.dart';
 import 'package:pulse_local_app/features/checkout/checkout_screen.dart';
 import 'package:pulse_local_app/features/checkout/repositories/foodpulse_checkout_risk_repository.dart';
 import 'package:pulse_local_app/features/checkout_risk/models/checkout_risk_request.dart';
 import 'package:pulse_local_app/features/checkout_risk/models/risk_prediction_response.dart';
+import 'package:pulse_local_app/features/foodpulse/models/foodpulse_order.dart';
+import 'package:pulse_local_app/features/foodpulse/repositories/foodpulse_repository.dart';
 
 void main() {
   testWidgets('loads the Laravel prediction and displays medium risk', (
@@ -18,7 +22,12 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(home: CheckoutScreen(checkoutRiskRepository: repository)),
+      MaterialApp(
+        home: CheckoutScreen(
+          checkoutRiskRepository: repository,
+          foodPulseRepository: const _StaticFoodPulseRepository(),
+        ),
+      ),
     );
     await tester.pump();
 
@@ -67,7 +76,12 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(home: CheckoutScreen(checkoutRiskRepository: repository)),
+      MaterialApp(
+        home: CheckoutScreen(
+          checkoutRiskRepository: repository,
+          foodPulseRepository: const _StaticFoodPulseRepository(),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -93,7 +107,12 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(home: CheckoutScreen(checkoutRiskRepository: repository)),
+      MaterialApp(
+        home: CheckoutScreen(
+          checkoutRiskRepository: repository,
+          foodPulseRepository: const _StaticFoodPulseRepository(),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -118,7 +137,12 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(home: CheckoutScreen(checkoutRiskRepository: repository)),
+      MaterialApp(
+        home: CheckoutScreen(
+          checkoutRiskRepository: repository,
+          foodPulseRepository: const _StaticFoodPulseRepository(),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -136,6 +160,43 @@ void main() {
 
     expect(find.text('Order Confirmed!'), findsOneWidget);
   });
+}
+
+class _StaticFoodPulseRepository implements FoodPulseRepository {
+  const _StaticFoodPulseRepository();
+
+  @override
+  Future<FoodPulseResult<List<Restaurant>>> fetchRestaurants() async {
+    return FoodPulseResult.data(MockFoodPulseData.restaurants);
+  }
+
+  @override
+  Future<FoodPulseResult<RestaurantMenu>> fetchMenu(int restaurantId) async {
+    return FoodPulseResult.data(
+      RestaurantMenu(
+        restaurant: MockFoodPulseData.restaurants.first,
+        items: MockFoodPulseData.menuItems,
+      ),
+    );
+  }
+
+  @override
+  Future<FoodPulseResult<CheckoutSummary>> checkoutCart(
+    CheckoutCartRequest request,
+  ) async {
+    return FoodPulseResult.data(
+      const FoodPulseFallbackRepository().checkout(request),
+    );
+  }
+
+  @override
+  Future<FoodPulseResult<OrderConfirmation>> fetchOrderConfirmation(
+    String orderNumber,
+  ) async {
+    return FoodPulseResult.data(
+      const FoodPulseFallbackRepository().orderConfirmation(orderNumber),
+    );
+  }
 }
 
 class _FakeFoodPulseCheckoutRiskRepository

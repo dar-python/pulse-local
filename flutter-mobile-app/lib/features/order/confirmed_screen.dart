@@ -3,15 +3,42 @@ import 'package:flutter/material.dart';
 import '../../core/data/mock_foodpulse_data.dart';
 import '../../core/models/risk_info.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/risk_color_mapper.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/primary_button.dart';
+import '../foodpulse/models/foodpulse_order.dart';
+import '../foodpulse/repositories/foodpulse_repository.dart';
 
 class ConfirmedScreen extends StatelessWidget {
-  const ConfirmedScreen({super.key});
+  const ConfirmedScreen({
+    super.key,
+    OrderConfirmation? orderConfirmation,
+    this.fallbackMessage,
+  }) : _orderConfirmation = orderConfirmation;
+
+  final OrderConfirmation? _orderConfirmation;
+  final String? fallbackMessage;
 
   @override
   Widget build(BuildContext context) {
-    final risk = RiskInfo.fromScore(MockFoodPulseData.checkoutRiskScore);
+    final order =
+        _orderConfirmation ??
+        const FoodPulseFallbackRepository().orderConfirmation(
+          MockFoodPulseData.orderNumber,
+        );
+    final risk = RiskInfo(
+      score: order.risk.score,
+      label: order.risk.level,
+      color: RiskColorMapper.colorFor(order.risk.level),
+    );
+    final trackingSteps = order.trackingSteps.isEmpty
+        ? const [
+            FoodPulseTrackingStep(label: 'Order placed', done: true),
+            FoodPulseTrackingStep(label: 'Merchant preparing', done: true),
+            FoodPulseTrackingStep(label: 'Rider assigned', done: false),
+            FoodPulseTrackingStep(label: 'Out for delivery', done: false),
+          ]
+        : order.trackingSteps;
 
     return Scaffold(
       backgroundColor: AppColors.prussian,
@@ -47,21 +74,50 @@ class ConfirmedScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 5),
-              const Text(
-                'Order #${MockFoodPulseData.orderNumber}',
+              Text(
+                'Order #${order.orderNumber}',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.silver, fontSize: 12),
+                style: const TextStyle(color: AppColors.silver, fontSize: 12),
               ),
               const SizedBox(height: 5),
-              const Text(
-                'Est. Arrival: 30–45 min',
+              Text(
+                'Est. Arrival: ${order.estimatedArrival}',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppColors.orange,
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
                 ),
               ),
+              if (fallbackMessage != null) ...[
+                const SizedBox(height: 14),
+                AppCard(
+                  color: AppColors.tangerine.withAlpha(24),
+                  borderColor: AppColors.tangerine.withAlpha(52),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.info_outline_rounded,
+                        color: AppColors.tangerine,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Text(
+                          fallbackMessage!,
+                          style: const TextStyle(
+                            color: AppColors.alabaster,
+                            fontSize: 11,
+                            height: 1.45,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 18),
               AppCard(
                 child: Column(
@@ -104,20 +160,18 @@ class ConfirmedScreen extends StatelessWidget {
                         value: risk.score / 100,
                         minHeight: 6,
                         backgroundColor: AppColors.white.withAlpha(20),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          AppColors.orange,
-                        ),
+                        valueColor: AlwaysStoppedAnimation<Color>(risk.color),
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 14),
-              const AppCard(
+              AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Order Status',
                       style: TextStyle(
                         color: AppColors.white,
@@ -125,15 +179,13 @@ class ConfirmedScreen extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    SizedBox(height: 13),
-                    _StatusRow(label: 'Order placed', done: true),
-                    _StatusRow(label: 'Merchant preparing', done: true),
-                    _StatusRow(label: 'Rider assigned', done: false),
-                    _StatusRow(
-                      label: 'Out for delivery',
-                      done: false,
-                      isLast: true,
-                    ),
+                    const SizedBox(height: 13),
+                    for (var index = 0; index < trackingSteps.length; index++)
+                      _StatusRow(
+                        label: trackingSteps[index].label,
+                        done: trackingSteps[index].done,
+                        isLast: index == trackingSteps.length - 1,
+                      ),
                   ],
                 ),
               ),

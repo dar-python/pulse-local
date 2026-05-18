@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/data/mock_foodpulse_data.dart';
+import '../../core/models/cart_item.dart';
+import '../../core/models/restaurant.dart';
 import '../../core/models/risk_info.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/theme/app_colors.dart';
@@ -12,16 +14,27 @@ import '../../shared/widgets/risk_chip.dart';
 import '../../shared/widgets/risk_gauge.dart';
 import '../checkout_risk/models/checkout_risk_request.dart';
 import '../checkout_risk/models/risk_prediction_response.dart';
+import '../foodpulse/models/foodpulse_order.dart';
+import '../foodpulse/repositories/foodpulse_repository.dart';
 import '../order/confirmed_screen.dart';
 import 'repositories/foodpulse_checkout_risk_repository.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({
     super.key,
+    Restaurant? restaurant,
+    List<CartItem>? items,
     FoodPulseCheckoutRiskRepository? checkoutRiskRepository,
-  }) : _checkoutRiskRepository = checkoutRiskRepository;
+    FoodPulseRepository? foodPulseRepository,
+  }) : _restaurant = restaurant,
+       _items = items,
+       _checkoutRiskRepository = checkoutRiskRepository,
+       _foodPulseRepository = foodPulseRepository;
 
+  final Restaurant? _restaurant;
+  final List<CartItem>? _items;
   final FoodPulseCheckoutRiskRepository? _checkoutRiskRepository;
+  final FoodPulseRepository? _foodPulseRepository;
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -37,16 +50,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     addressComplexity: 'medium',
     paymentMethod: 'cod',
   );
+  static const _deliveryAddress = FoodPulseDeliveryAddress(
+    label: 'Marasbaras, Tacloban City',
+    notes: 'Zone 7 · Leyte, Philippines',
+  );
 
+  late final Restaurant _restaurant;
+  late final List<CartItem> _items;
   late final FoodPulseCheckoutRiskRepository _checkoutRiskRepository;
+  FoodPulseRepository? _foodPulseRepository;
   String _paymentMethod = 'cod';
   bool _isRiskLoading = true;
+  bool _isSubmittingOrder = false;
   RiskPredictionResponse? _riskPrediction;
   String? _riskErrorMessage;
+  String? _orderErrorMessage;
 
   @override
   void initState() {
     super.initState();
+    _restaurant = widget._restaurant ?? MockFoodPulseData.restaurants.first;
+    _items = widget._items ?? MockFoodPulseData.defaultCart;
     _checkoutRiskRepository =
         widget._checkoutRiskRepository ??
         LaravelFoodPulseCheckoutRiskRepository();
@@ -54,9 +78,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _foodPulseRepository ??=
+        widget._foodPulseRepository ??
+        FoodPulseRepositoryScope.maybeOf(context) ??
+        LaravelFoodPulseRepository();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final risk = _displayRisk;
-    final total = MockFoodPulseData.totalFor(MockFoodPulseData.defaultCart);
+    final total = MockFoodPulseData.totalFor(_items);
 
     return Scaffold(
       backgroundColor: AppColors.prussian,
@@ -279,13 +312,40 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              PrimaryButton(
-                label: 'Place Order · ₱$total',
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const ConfirmedScreen(),
+              if (_orderErrorMessage != null) ...[
+                AppCard(
+                  color: AppColors.tangerine.withAlpha(24),
+                  borderColor: AppColors.tangerine.withAlpha(52),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.info_outline_rounded,
+                        color: AppColors.tangerine,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Text(
+                          _orderErrorMessage!,
+                          style: const TextStyle(
+                            color: AppColors.alabaster,
+                            fontSize: 11,
+                            height: 1.45,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 12),
+              ],
+              PrimaryButton(
+                label: _isSubmittingOrder
+                    ? 'Placing Order...'
+                    : 'Place Order · ₱$total',
+                onPressed: _isSubmittingOrder ? null : _placeOrder,
               ),
               const SizedBox(height: 10),
               const Text(
@@ -364,6 +424,76 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
 
     return 'Risk source: ${prediction.source}';
+  }
+
+  Future<void> _placeOrder() async {
+    final repository = _foodPulseRepository ?? LaravelFoodPulseRepository();
+    final request = CheckoutCartRequest(
+      restaurant: _restaurant,
+      items: _items,
+      paymentMethod: _paymentMethod,
+      deliveryAddress: _deliveryAddress,
+    );
+
+    setState(() {
+      _isSubmittingOrder = true;
+      _orderErrorMessage = null;
+    });
+
+    try {
+      final checkoutResult = await repository.checkoutCart(request);
+      final rawConfirmationResult = checkoutResult.usedFallback
+          ? FoodPulseResult.fallback(
+              OrderConfirmation.fromCheckout(checkoutResult.data),
+              message:
+                  checkoutResult.message ?? 'Using saved local checkout data.',
+            )
+          : await repository.fetchOrderConfirmation(
+              checkoutResult.data.orderNumber,
+            );
+      final orderConfirmation = rawConfirmationResult.usedFallback
+          ? OrderConfirmation.fromCheckout(checkoutResult.data)
+          : rawConfirmationResult.data;
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _isSubmittingOrder = false);
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ConfirmedScreen(
+            orderConfirmation: orderConfirmation,
+            fallbackMessage: rawConfirmationResult.usedFallback
+                ? rawConfirmationResult.message
+                : null,
+          ),
+        ),
+      );
+    } catch (_) {
+      final fallbackCheckout = const FoodPulseFallbackRepository().checkout(
+        request,
+      );
+      const message =
+          'Laravel order checkout is unavailable. Using saved local checkout data so the demo can continue.';
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isSubmittingOrder = false;
+        _orderErrorMessage = message;
+      });
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ConfirmedScreen(
+            orderConfirmation: OrderConfirmation.fromCheckout(fallbackCheckout),
+            fallbackMessage: message,
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _loadCheckoutRisk() async {

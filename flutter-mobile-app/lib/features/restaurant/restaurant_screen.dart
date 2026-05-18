@@ -1,48 +1,138 @@
 import 'package:flutter/material.dart';
 
 import '../../core/data/mock_foodpulse_data.dart';
+import '../../core/models/cart_item.dart';
 import '../../core/models/menu_item.dart';
+import '../../core/models/restaurant.dart';
+import '../../core/models/risk_info.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../cart/cart_screen.dart';
+import '../foodpulse/repositories/foodpulse_repository.dart';
 
 class RestaurantScreen extends StatefulWidget {
-  const RestaurantScreen({super.key});
+  const RestaurantScreen({super.key, Restaurant? restaurant})
+    : _restaurant = restaurant;
+
+  final Restaurant? _restaurant;
 
   @override
   State<RestaurantScreen> createState() => _RestaurantScreenState();
 }
 
 class _RestaurantScreenState extends State<RestaurantScreen> {
-  static const _tabs = ['Bestsellers', 'Specials', 'Desserts'];
+  static const _defaultTabs = ['Bestsellers', 'Specials', 'Desserts'];
+
   late final Map<int, int> _cart;
+  late final Restaurant _restaurant;
+  late FoodPulseRepository _repository;
+  List<MenuItem> _menuItems = MockFoodPulseData.menuItems;
   String _selectedTab = 'Bestsellers';
+  bool _didLoadMenu = false;
+  bool _isLoadingMenu = true;
+  String? _menuMessage;
 
   @override
   void initState() {
     super.initState();
+    _restaurant = widget._restaurant ?? MockFoodPulseData.restaurants.first;
     _cart = {
       for (final item in MockFoodPulseData.defaultCart)
         item.item.id: item.quantity,
     };
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didLoadMenu) {
+      return;
+    }
+
+    _didLoadMenu = true;
+    _repository =
+        FoodPulseRepositoryScope.maybeOf(context) ??
+        LaravelFoodPulseRepository();
+    _loadMenu();
+  }
+
   int get _cartCount => _cart.values.fold(0, (sum, quantity) => sum + quantity);
 
   int get _cartTotal {
     return _cart.entries.fold(0, (sum, entry) {
-      final item = MockFoodPulseData.menuItems.firstWhere(
-        (menuItem) => menuItem.id == entry.key,
-      );
+      final item = _menuItemById(entry.key);
       return sum + item.price * entry.value;
     });
   }
 
+  List<CartItem> get _cartItems {
+    return _cart.entries
+        .map(
+          (entry) =>
+              CartItem(item: _menuItemById(entry.key), quantity: entry.value),
+        )
+        .toList();
+  }
+
+  Future<void> _loadMenu() async {
+    try {
+      final result = await _repository.fetchMenu(_restaurant.id);
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _menuItems = result.data.items;
+        _menuMessage = result.usedFallback ? result.message : null;
+        _isLoadingMenu = false;
+
+        final tabs = _tabsFor(_menuItems);
+        if (!tabs.contains(_selectedTab)) {
+          _selectedTab = tabs.first;
+        }
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _menuItems = MockFoodPulseData.menuItems;
+        _menuMessage = 'Using saved local menu data.';
+        _isLoadingMenu = false;
+      });
+    }
+  }
+
+  List<String> _tabsFor(List<MenuItem> items) {
+    final categories = items
+        .map((item) => item.category)
+        .where((category) => category.trim().isNotEmpty)
+        .toSet()
+        .toList();
+
+    return categories.isEmpty ? _defaultTabs : categories;
+  }
+
+  MenuItem _menuItemById(int itemId) {
+    return _menuItems.firstWhere(
+      (item) => item.id == itemId,
+      orElse: () => MockFoodPulseData.menuItems.firstWhere(
+        (item) => item.id == itemId,
+        orElse: () => _menuItems.isNotEmpty
+            ? _menuItems.first
+            : MockFoodPulseData.menuItems.first,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final visibleItems = MockFoodPulseData.menuItems
+    final tabs = _tabsFor(_menuItems);
+    final visibleItems = _menuItems
         .where((item) => item.category == _selectedTab)
         .toList();
+    final risk = RiskInfo.fromScore(_restaurant.riskScore);
 
     return Scaffold(
       backgroundColor: AppColors.prussian,
@@ -50,7 +140,10 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
         bottom: false,
         child: Column(
           children: [
-            _RestaurantHero(onBack: () => Navigator.of(context).pop()),
+            _RestaurantHero(
+              emoji: _restaurant.emoji,
+              onBack: () => Navigator.of(context).pop(),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 8),
               child: Column(
@@ -58,22 +151,22 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Tambayan Grill',
-                              style: TextStyle(
+                              _restaurant.name,
+                              style: const TextStyle(
                                 color: AppColors.white,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
-                            SizedBox(height: 3),
+                            const SizedBox(height: 3),
                             Text(
-                              'Filipino · Grills · Local Favorites',
-                              style: TextStyle(
+                              _restaurant.cuisine,
+                              style: const TextStyle(
                                 color: AppColors.silver,
                                 fontSize: 11,
                               ),
@@ -84,19 +177,19 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                       const SizedBox(width: 10),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
-                        children: const [
+                        children: [
                           Text(
-                            '★ 4.8',
-                            style: TextStyle(
+                            '★ ${_restaurant.rating.toStringAsFixed(1)}',
+                            style: const TextStyle(
                               color: AppColors.orange,
                               fontSize: 13,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
-                          SizedBox(height: 3),
+                          const SizedBox(height: 3),
                           Text(
-                            '15–25 min',
-                            style: TextStyle(
+                            _restaurant.deliveryTime,
+                            style: const TextStyle(
                               color: AppColors.silver,
                               fontSize: 11,
                             ),
@@ -112,23 +205,23 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.green.withAlpha(38),
+                      color: risk.color.withAlpha(38),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.green.withAlpha(72)),
+                      border: Border.all(color: risk.color.withAlpha(72)),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(
                           Icons.check_circle_rounded,
                           size: 15,
-                          color: AppColors.green,
+                          color: risk.color,
                         ),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Low fulfillment risk (28%) · ETA on track',
+                            '${risk.label} fulfillment risk (${risk.score}%) · ETA on track',
                             style: TextStyle(
-                              color: AppColors.green,
+                              color: risk.color,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                             ),
@@ -141,31 +234,40 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
               ),
             ),
             _MenuTabs(
-              tabs: _tabs,
+              tabs: tabs,
               selected: _selectedTab,
               onChanged: (tab) => setState(() => _selectedTab = tab),
             ),
-            Expanded(
-              child: ListView.separated(
-                padding: EdgeInsets.fromLTRB(
-                  18,
-                  8,
-                  18,
-                  _cartCount > 0 ? 92 : 20,
-                ),
-                itemBuilder: (context, index) => _MenuItemRow(
-                  item: visibleItems[index],
-                  onAdd: () {
-                    setState(() {
-                      _cart[visibleItems[index].id] =
-                          (_cart[visibleItems[index].id] ?? 0) + 1;
-                    });
-                  },
-                ),
-                separatorBuilder: (_, _) =>
-                    Divider(color: AppColors.white.withAlpha(14), height: 1),
-                itemCount: visibleItems.length,
+            if (_isLoadingMenu || _menuMessage != null)
+              _MenuStatusBanner(
+                isLoading: _isLoadingMenu,
+                message: _menuMessage,
               ),
+            Expanded(
+              child: visibleItems.isEmpty && !_isLoadingMenu
+                  ? const _EmptyMenuState()
+                  : ListView.separated(
+                      padding: EdgeInsets.fromLTRB(
+                        18,
+                        8,
+                        18,
+                        _cartCount > 0 ? 92 : 20,
+                      ),
+                      itemBuilder: (context, index) => _MenuItemRow(
+                        item: visibleItems[index],
+                        onAdd: () {
+                          setState(() {
+                            _cart[visibleItems[index].id] =
+                                (_cart[visibleItems[index].id] ?? 0) + 1;
+                          });
+                        },
+                      ),
+                      separatorBuilder: (_, _) => Divider(
+                        color: AppColors.white.withAlpha(14),
+                        height: 1,
+                      ),
+                      itemCount: visibleItems.length,
+                    ),
             ),
           ],
         ),
@@ -188,7 +290,12 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                     ),
                   ),
                   onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(builder: (_) => const CartScreen()),
+                    MaterialPageRoute<void>(
+                      builder: (_) => CartScreen(
+                        restaurant: _restaurant,
+                        items: _cartItems,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -199,8 +306,9 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
 }
 
 class _RestaurantHero extends StatelessWidget {
-  const _RestaurantHero({required this.onBack});
+  const _RestaurantHero({required this.emoji, required this.onBack});
 
+  final String emoji;
   final VoidCallback onBack;
 
   @override
@@ -210,7 +318,7 @@ class _RestaurantHero extends StatelessWidget {
       color: AppColors.dusk,
       child: Stack(
         children: [
-          const Center(child: Text('🍖', style: TextStyle(fontSize: 54))),
+          Center(child: Text(emoji, style: const TextStyle(fontSize: 54))),
           Positioned(
             left: 12,
             top: 12,
@@ -233,6 +341,70 @@ class _RestaurantHero extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MenuStatusBanner extends StatelessWidget {
+  const _MenuStatusBanner({required this.isLoading, required this.message});
+
+  final bool isLoading;
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
+      child: Row(
+        children: [
+          if (isLoading)
+            const SizedBox(
+              width: 15,
+              height: 15,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.orange,
+              ),
+            )
+          else
+            const Icon(
+              Icons.info_outline_rounded,
+              color: AppColors.orange,
+              size: 16,
+            ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isLoading
+                  ? 'Loading menu from Laravel...'
+                  : message ?? 'Using saved local menu data.',
+              style: const TextStyle(
+                color: AppColors.silver,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyMenuState extends StatelessWidget {
+  const _EmptyMenuState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Text(
+          'No menu items are available right now.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppColors.silver, fontSize: 12),
+        ),
       ),
     );
   }

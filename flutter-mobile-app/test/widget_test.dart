@@ -1,9 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse_local_app/app/foodpulse_app.dart';
+import 'package:pulse_local_app/core/data/mock_foodpulse_data.dart';
+import 'package:pulse_local_app/core/models/restaurant.dart';
 import 'package:pulse_local_app/features/checkout/repositories/foodpulse_checkout_risk_repository.dart';
 import 'package:pulse_local_app/features/checkout_risk/models/checkout_risk_request.dart';
 import 'package:pulse_local_app/features/checkout_risk/models/risk_prediction_response.dart';
+import 'package:pulse_local_app/features/foodpulse/models/foodpulse_order.dart';
+import 'package:pulse_local_app/features/foodpulse/repositories/foodpulse_repository.dart';
 
 void main() {
   testWidgets('starts on local login and rejects non-demo credentials', (
@@ -25,17 +29,20 @@ void main() {
 
   testWidgets('navigates the mock FoodPulse ordering flow', (tester) async {
     await tester.pumpWidget(
-      FoodPulseCheckoutRiskScope(
-        repository: _StaticFoodPulseCheckoutRiskRepository(
-          const RiskPredictionResponse(
-            success: true,
-            source: 'ml-service',
-            riskScore: 0.68,
-            riskLevel: 'Medium',
-            recommendation: 'Medium fulfillment risk. Keep ETA visible.',
+      FoodPulseRepositoryScope(
+        repository: const _StaticFoodPulseRepository(),
+        child: FoodPulseCheckoutRiskScope(
+          repository: _StaticFoodPulseCheckoutRiskRepository(
+            const RiskPredictionResponse(
+              success: true,
+              source: 'ml-service',
+              riskScore: 0.68,
+              riskLevel: 'Medium',
+              recommendation: 'Medium fulfillment risk. Keep ETA visible.',
+            ),
           ),
+          child: const FoodPulseApp(),
         ),
-        child: const FoodPulseApp(),
       ),
     );
 
@@ -92,5 +99,42 @@ class _StaticFoodPulseCheckoutRiskRepository
     CheckoutRiskRequest request,
   ) async {
     return response;
+  }
+}
+
+class _StaticFoodPulseRepository implements FoodPulseRepository {
+  const _StaticFoodPulseRepository();
+
+  @override
+  Future<FoodPulseResult<List<Restaurant>>> fetchRestaurants() async {
+    return FoodPulseResult.data(MockFoodPulseData.restaurants);
+  }
+
+  @override
+  Future<FoodPulseResult<RestaurantMenu>> fetchMenu(int restaurantId) async {
+    return FoodPulseResult.data(
+      RestaurantMenu(
+        restaurant: MockFoodPulseData.restaurants.first,
+        items: MockFoodPulseData.menuItems,
+      ),
+    );
+  }
+
+  @override
+  Future<FoodPulseResult<CheckoutSummary>> checkoutCart(
+    CheckoutCartRequest request,
+  ) async {
+    return FoodPulseResult.data(
+      const FoodPulseFallbackRepository().checkout(request),
+    );
+  }
+
+  @override
+  Future<FoodPulseResult<OrderConfirmation>> fetchOrderConfirmation(
+    String orderNumber,
+  ) async {
+    return FoodPulseResult.data(
+      const FoodPulseFallbackRepository().orderConfirmation(orderNumber),
+    );
   }
 }

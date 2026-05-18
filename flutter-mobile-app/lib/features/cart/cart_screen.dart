@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
 
 import '../../core/data/mock_foodpulse_data.dart';
+import '../../core/models/cart_item.dart';
+import '../../core/models/restaurant.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../checkout/checkout_screen.dart';
 import '../checkout/repositories/foodpulse_checkout_risk_repository.dart';
+import '../foodpulse/repositories/foodpulse_repository.dart';
 
 class CartScreen extends StatelessWidget {
-  const CartScreen({super.key});
+  const CartScreen({super.key, Restaurant? restaurant, List<CartItem>? items})
+    : _restaurant = restaurant,
+      _items = items;
+
+  final Restaurant? _restaurant;
+  final List<CartItem>? _items;
 
   @override
   Widget build(BuildContext context) {
-    final items = MockFoodPulseData.defaultCart;
+    final restaurant = _restaurant ?? MockFoodPulseData.restaurants.first;
+    final items = _items ?? MockFoodPulseData.defaultCart;
     final subtotal = MockFoodPulseData.subtotalFor(items);
     final total = MockFoodPulseData.totalFor(items);
 
@@ -29,27 +38,30 @@ class CartScreen extends StatelessWidget {
                 onBack: () => Navigator.of(context).pop(),
               ),
               const SizedBox(height: 12),
-              const AppCard(
+              AppCard(
                 child: Row(
                   children: [
-                    Text('🍖', style: TextStyle(fontSize: 22)),
-                    SizedBox(width: 10),
+                    Text(
+                      restaurant.emoji,
+                      style: const TextStyle(fontSize: 22),
+                    ),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Tambayan Grill',
-                            style: TextStyle(
+                            restaurant.name,
+                            style: const TextStyle(
                               color: AppColors.white,
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          SizedBox(height: 3),
+                          const SizedBox(height: 3),
                           Text(
-                            '15–25 min · ₱49 delivery',
-                            style: TextStyle(
+                            '${restaurant.deliveryTime} · ₱${MockFoodPulseData.deliveryFee} delivery',
+                            style: const TextStyle(
                               color: AppColors.silver,
                               fontSize: 11,
                             ),
@@ -140,8 +152,13 @@ class CartScreen extends StatelessWidget {
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => CheckoutScreen(
+                      restaurant: restaurant,
+                      items: items,
                       checkoutRiskRepository:
                           FoodPulseCheckoutRiskScope.maybeOf(context),
+                      foodPulseRepository: FoodPulseRepositoryScope.maybeOf(
+                        context,
+                      ),
                     ),
                   ),
                 ),

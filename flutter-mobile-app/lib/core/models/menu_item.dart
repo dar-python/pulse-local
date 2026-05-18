@@ -14,4 +14,15 @@ class MenuItem {
   final int price;
   final String emoji;
   final String category;
+
+  factory MenuItem.fromJson(Map<String, dynamic> json) {
+    return MenuItem(
+      id: (json['id'] as num).toInt(),
+      name: json['name']?.toString() ?? 'Menu item',
+      description: json['description']?.toString() ?? '',
+      price: (json['price'] as num?)?.toInt() ?? 0,
+      emoji: json['emoji']?.toString() ?? '',
+      category: json['category']?.toString() ?? 'Bestsellers',
+    );
+  }
 }

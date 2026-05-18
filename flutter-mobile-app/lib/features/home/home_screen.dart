@@ -9,6 +9,7 @@ import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/foodpulse_logo.dart';
 import '../../shared/widgets/risk_chip.dart';
 import '../cart/cart_screen.dart';
+import '../foodpulse/repositories/foodpulse_repository.dart';
 import '../restaurant/restaurant_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -67,6 +68,50 @@ class _HomeContentState extends State<_HomeContent> {
     'Desserts',
   ];
   String _selectedCategory = 'All';
+  List<Restaurant> _restaurants = MockFoodPulseData.restaurants;
+  bool _didLoadRestaurants = false;
+  bool _isLoadingRestaurants = true;
+  String? _restaurantMessage;
+  late FoodPulseRepository _repository;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didLoadRestaurants) {
+      return;
+    }
+
+    _didLoadRestaurants = true;
+    _repository =
+        FoodPulseRepositoryScope.maybeOf(context) ??
+        LaravelFoodPulseRepository();
+    _loadRestaurants();
+  }
+
+  Future<void> _loadRestaurants() async {
+    try {
+      final result = await _repository.fetchRestaurants();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _restaurants = result.data;
+        _restaurantMessage = result.usedFallback ? result.message : null;
+        _isLoadingRestaurants = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _restaurants = MockFoodPulseData.restaurants;
+        _restaurantMessage = 'Using saved local restaurant data.';
+        _isLoadingRestaurants = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +119,10 @@ class _HomeContentState extends State<_HomeContent> {
       0,
       (sum, item) => sum + item.quantity,
     );
+
+    final featuredRestaurant = _restaurants.isNotEmpty
+        ? _restaurants.first
+        : MockFoodPulseData.restaurants.first;
 
     return SafeArea(
       bottom: false,
@@ -123,7 +172,7 @@ class _HomeContentState extends State<_HomeContent> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                _CartButton(count: cartCount),
+                _CartButton(count: cartCount, restaurant: featuredRestaurant),
               ],
             ),
             const SizedBox(height: 14),
@@ -132,7 +181,8 @@ class _HomeContentState extends State<_HomeContent> {
             _HeroBanner(
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const RestaurantScreen(),
+                  builder: (_) =>
+                      RestaurantScreen(restaurant: featuredRestaurant),
                 ),
               ),
             ),
@@ -178,7 +228,14 @@ class _HomeContentState extends State<_HomeContent> {
               ],
             ),
             const SizedBox(height: 10),
-            for (final restaurant in MockFoodPulseData.restaurants) ...[
+            if (_isLoadingRestaurants || _restaurantMessage != null) ...[
+              _DataStatusBanner(
+                isLoading: _isLoadingRestaurants,
+                message: _restaurantMessage,
+              ),
+              const SizedBox(height: 10),
+            ],
+            for (final restaurant in _restaurants) ...[
               _RestaurantCard(restaurant: restaurant),
               const SizedBox(height: 10),
             ],
@@ -190,17 +247,20 @@ class _HomeContentState extends State<_HomeContent> {
 }
 
 class _CartButton extends StatelessWidget {
-  const _CartButton({required this.count});
+  const _CartButton({required this.count, required this.restaurant});
 
   final int count;
+  final Restaurant restaurant;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(8),
-      onTap: () => Navigator.of(
-        context,
-      ).push(MaterialPageRoute<void>(builder: (_) => const CartScreen())),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => CartScreen(restaurant: restaurant),
+        ),
+      ),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -412,9 +472,11 @@ class _RestaurantCard extends StatelessWidget {
 
     return AppCard(
       padding: EdgeInsets.zero,
-      onTap: () => Navigator.of(
-        context,
-      ).push(MaterialPageRoute<void>(builder: (_) => const RestaurantScreen())),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => RestaurantScreen(restaurant: restaurant),
+        ),
+      ),
       child: Column(
         children: [
           Container(
@@ -516,6 +578,54 @@ class _RestaurantCard extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DataStatusBanner extends StatelessWidget {
+  const _DataStatusBanner({required this.isLoading, required this.message});
+
+  final bool isLoading;
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      color: AppColors.white.withAlpha(12),
+      borderColor: AppColors.white.withAlpha(26),
+      child: Row(
+        children: [
+          if (isLoading)
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.orange,
+              ),
+            )
+          else
+            const Icon(
+              Icons.info_outline_rounded,
+              color: AppColors.orange,
+              size: 17,
+            ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              isLoading
+                  ? 'Loading restaurants from Laravel...'
+                  : message ?? 'Using saved local restaurant data.',
+              style: const TextStyle(
+                color: AppColors.silver,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
