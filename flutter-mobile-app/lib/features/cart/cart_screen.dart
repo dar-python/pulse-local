@@ -5,6 +5,7 @@ import '../../core/models/cart_item.dart';
 import '../../core/models/restaurant.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_card.dart';
+import '../../shared/widgets/foodpulse_asset_image.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../checkout/checkout_screen.dart';
 import '../checkout/repositories/foodpulse_checkout_risk_repository.dart';
@@ -90,6 +91,7 @@ class CartScreen extends StatelessWidget {
                 for (final cartItem in items)
                   _CartItemRow(
                     emoji: cartItem.item.emoji,
+                    imageAsset: cartItem.item.imageAsset,
                     name: cartItem.item.name,
                     price: cartItem.item.price,
                     quantity: cartItem.quantity,
@@ -267,6 +269,7 @@ class _Header extends StatelessWidget {
 class _CartItemRow extends StatelessWidget {
   const _CartItemRow({
     required this.emoji,
+    required this.imageAsset,
     required this.name,
     required this.price,
     required this.quantity,
@@ -274,6 +277,7 @@ class _CartItemRow extends StatelessWidget {
   });
 
   final String emoji;
+  final String? imageAsset;
   final String name;
   final int price;
   final int quantity;
@@ -293,12 +297,19 @@ class _CartItemRow extends StatelessWidget {
           Container(
             width: 38,
             height: 38,
-            decoration: BoxDecoration(
-              color: AppColors.dusk.withAlpha(96),
-              borderRadius: BorderRadius.circular(8),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+            child: FoodPulseAssetImage(
+              imageAsset: imageAsset,
+              fallbackLabel: emoji,
+              width: 38,
+              height: 38,
+              backgroundColor: AppColors.dusk.withAlpha(96),
+              fallbackTextStyle: const TextStyle(
+                color: AppColors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
             ),
-            alignment: Alignment.center,
-            child: Text(emoji, style: const TextStyle(fontSize: 18)),
           ),
           const SizedBox(width: 11),
           Expanded(

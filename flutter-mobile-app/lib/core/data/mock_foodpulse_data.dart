@@ -1,3 +1,4 @@
+import '../constants/foodpulse_image_assets.dart';
 import '../models/cart_item.dart';
 import '../models/menu_item.dart';
 import '../models/restaurant.dart';
@@ -15,6 +16,7 @@ class MockFoodPulseData {
       minimumOrder: 99,
       emoji: 'TG',
       riskScore: 28,
+      imageAsset: FoodPulseImageAssets.tambayanGrill,
     ),
     Restaurant(
       id: 2,
@@ -25,6 +27,7 @@ class MockFoodPulseData {
       minimumOrder: 79,
       emoji: 'JB',
       riskScore: 62,
+      imageAsset: FoodPulseImageAssets.jollibeeExpress,
     ),
     Restaurant(
       id: 3,
@@ -35,6 +38,7 @@ class MockFoodPulseData {
       minimumOrder: 89,
       emoji: 'CF',
       riskScore: 81,
+      imageAsset: FoodPulseImageAssets.chaoFanHouse,
     ),
   ];
 
@@ -46,6 +50,7 @@ class MockFoodPulseData {
     price: 185,
     emoji: 'PS',
     category: 'Bestsellers',
+    imageAsset: FoodPulseImageAssets.porkSinigang,
   );
   static const chickenInasal = MenuItem(
     id: 2,
@@ -55,6 +60,7 @@ class MockFoodPulseData {
     price: 155,
     emoji: 'CI',
     category: 'Bestsellers',
+    imageAsset: FoodPulseImageAssets.chickenInasal,
   );
   static const lechonKawali = MenuItem(
     id: 3,
@@ -64,6 +70,7 @@ class MockFoodPulseData {
     price: 210,
     emoji: 'LK',
     category: 'Mains',
+    imageAsset: FoodPulseImageAssets.lechonKawali,
   );
   static const pancitCanton = MenuItem(
     id: 4,
@@ -73,6 +80,7 @@ class MockFoodPulseData {
     price: 145,
     emoji: 'PC',
     category: 'Mains',
+    imageAsset: FoodPulseImageAssets.pancitCanton,
   );
   static const haloHalo = MenuItem(
     id: 5,
@@ -82,6 +90,7 @@ class MockFoodPulseData {
     price: 95,
     emoji: 'HH',
     category: 'Desserts',
+    imageAsset: FoodPulseImageAssets.haloHalo,
   );
 
   static const chickenjoyMeal = MenuItem(
@@ -92,6 +101,7 @@ class MockFoodPulseData {
     price: 149,
     emoji: 'CJ',
     category: 'Bestsellers',
+    imageAsset: FoodPulseImageAssets.chickenjoyMeal,
   );
   static const jollySpaghetti = MenuItem(
     id: 7,
@@ -101,6 +111,7 @@ class MockFoodPulseData {
     price: 85,
     emoji: 'JS',
     category: 'Bestsellers',
+    imageAsset: FoodPulseImageAssets.jollySpaghetti,
   );
   static const yumburger = MenuItem(
     id: 8,
@@ -110,6 +121,7 @@ class MockFoodPulseData {
     price: 55,
     emoji: 'YB',
     category: 'Sandwiches',
+    imageAsset: FoodPulseImageAssets.yumburger,
   );
   static const burgerSteak = MenuItem(
     id: 9,
@@ -119,6 +131,7 @@ class MockFoodPulseData {
     price: 99,
     emoji: 'BS',
     category: 'Rice Meals',
+    imageAsset: FoodPulseImageAssets.burgerSteak,
   );
   static const peachMangoPie = MenuItem(
     id: 10,
@@ -128,6 +141,7 @@ class MockFoodPulseData {
     price: 49,
     emoji: 'PM',
     category: 'Desserts',
+    imageAsset: FoodPulseImageAssets.peachMangoPie,
   );
 
   static const porkChaoFan = MenuItem(
@@ -138,6 +152,7 @@ class MockFoodPulseData {
     price: 135,
     emoji: 'PF',
     category: 'Bestsellers',
+    imageAsset: FoodPulseImageAssets.porkChaoFan,
   );
   static const beefChaoFan = MenuItem(
     id: 12,
@@ -147,6 +162,7 @@ class MockFoodPulseData {
     price: 155,
     emoji: 'BF',
     category: 'Bestsellers',
+    imageAsset: FoodPulseImageAssets.beefChaoFan,
   );
   static const siomai = MenuItem(
     id: 13,
@@ -156,6 +172,7 @@ class MockFoodPulseData {
     price: 90,
     emoji: 'SM',
     category: 'Dimsum',
+    imageAsset: FoodPulseImageAssets.siomai,
   );
   static const wontonNoodles = MenuItem(
     id: 14,
@@ -165,6 +182,7 @@ class MockFoodPulseData {
     price: 120,
     emoji: 'WN',
     category: 'Noodles',
+    imageAsset: FoodPulseImageAssets.wontonNoodles,
   );
   static const buchi = MenuItem(
     id: 15,
@@ -174,6 +192,7 @@ class MockFoodPulseData {
     price: 65,
     emoji: 'BC',
     category: 'Desserts',
+    imageAsset: FoodPulseImageAssets.buchi,
   );
 
   static const menuItems = [

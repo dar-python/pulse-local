@@ -1,3 +1,5 @@
+import '../constants/foodpulse_image_assets.dart';
+
 class Restaurant {
   const Restaurant({
     required this.id,
@@ -8,6 +10,7 @@ class Restaurant {
     required this.minimumOrder,
     required this.emoji,
     required this.riskScore,
+    this.imageAsset,
   });
 
   final int id;
@@ -18,11 +21,15 @@ class Restaurant {
   final int minimumOrder;
   final String emoji;
   final int riskScore;
+  final String? imageAsset;
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
+    final id = (json['id'] as num).toInt();
+    final name = json['name']?.toString() ?? 'Restaurant';
+
     return Restaurant(
-      id: (json['id'] as num).toInt(),
-      name: json['name']?.toString() ?? 'Restaurant',
+      id: id,
+      name: name,
       cuisine: json['cuisine']?.toString() ?? 'Local Food',
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
       deliveryTime:
@@ -38,6 +45,18 @@ class Restaurant {
           (json['risk_score'] as num?)?.toInt() ??
           (json['riskScore'] as num?)?.toInt() ??
           0,
+      imageAsset:
+          _stringOrNull(json['image_asset'] ?? json['imageAsset']) ??
+          FoodPulseImageAssets.restaurantAsset(
+            id: id,
+            name: name,
+            slug: _stringOrNull(json['slug']),
+          ),
     );
   }
+}
+
+String? _stringOrNull(Object? value) {
+  final text = value?.toString().trim();
+  return text == null || text.isEmpty ? null : text;
 }

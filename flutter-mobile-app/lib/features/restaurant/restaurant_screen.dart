@@ -6,6 +6,7 @@ import '../../core/models/restaurant.dart';
 import '../../core/models/risk_info.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_card.dart';
+import '../../shared/widgets/foodpulse_asset_image.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../cart/cart_screen.dart';
 import '../cart/foodpulse_cart_controller.dart';
@@ -139,6 +140,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
           children: [
             _RestaurantHero(
               emoji: _restaurant.emoji,
+              imageAsset: _restaurant.imageAsset,
               onBack: () => Navigator.of(context).pop(),
             ),
             Padding(
@@ -369,9 +371,14 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
 }
 
 class _RestaurantHero extends StatelessWidget {
-  const _RestaurantHero({required this.emoji, required this.onBack});
+  const _RestaurantHero({
+    required this.emoji,
+    required this.imageAsset,
+    required this.onBack,
+  });
 
   final String emoji;
+  final String? imageAsset;
   final VoidCallback onBack;
 
   @override
@@ -381,7 +388,33 @@ class _RestaurantHero extends StatelessWidget {
       color: AppColors.dusk,
       child: Stack(
         children: [
-          Center(child: Text(emoji, style: const TextStyle(fontSize: 54))),
+          Positioned.fill(
+            child: FoodPulseAssetImage(
+              imageAsset: imageAsset,
+              fallbackLabel: emoji,
+              borderRadius: BorderRadius.zero,
+              backgroundColor: AppColors.dusk,
+              fallbackTextStyle: const TextStyle(
+                color: AppColors.white,
+                fontSize: 54,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.prussian.withAlpha(18),
+                    AppColors.prussian.withAlpha(154),
+                  ],
+                ),
+              ),
+            ),
+          ),
           Positioned(
             left: 12,
             top: 12,
@@ -640,11 +673,20 @@ class _MenuItemRow extends StatelessWidget {
                 width: 66,
                 height: 66,
                 decoration: BoxDecoration(
-                  color: AppColors.dusk.withAlpha(112),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                alignment: Alignment.center,
-                child: Text(item.emoji, style: const TextStyle(fontSize: 29)),
+                child: FoodPulseAssetImage(
+                  imageAsset: item.imageAsset,
+                  fallbackLabel: item.emoji,
+                  width: 66,
+                  height: 66,
+                  backgroundColor: AppColors.dusk.withAlpha(112),
+                  fallbackTextStyle: const TextStyle(
+                    color: AppColors.white,
+                    fontSize: 29,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ),
               Positioned(
                 right: -8,

@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/foodpulse_logo.dart';
+import '../../shared/widgets/foodpulse_asset_image.dart';
 import '../../shared/widgets/risk_chip.dart';
 import '../cart/cart_screen.dart';
 import '../cart/foodpulse_cart_controller.dart';
@@ -560,10 +561,36 @@ class _RestaurantCard extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                Center(
-                  child: Text(
-                    restaurant.emoji,
-                    style: const TextStyle(fontSize: 42),
+                Positioned.fill(
+                  child: FoodPulseAssetImage(
+                    imageAsset: restaurant.imageAsset,
+                    fallbackLabel: restaurant.emoji,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(8),
+                    ),
+                    backgroundColor: AppColors.dusk.withAlpha(205),
+                    fallbackTextStyle: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 42,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(8),
+                      ),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.prussian.withAlpha(24),
+                          AppColors.prussian.withAlpha(170),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
                 Positioned(
