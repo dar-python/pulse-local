@@ -1,6 +1,9 @@
 import json
 
+import joblib
 import pandas as pd
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.linear_model import LogisticRegression
 
 from scripts.prepare_dataset import prepare_dataset
 from scripts.train_model import FEATURE_COLUMNS, TARGET_COLUMN, train_model
@@ -56,6 +59,30 @@ def test_train_model_exports_model_and_metadata_from_processed_dataset(tmp_path)
     assert metadata["model_type"] == "LogisticRegression"
     assert metadata["cross_validation"]["n_splits"] == 2
     assert "created_at" not in metadata
+
+
+def test_train_model_exports_calibrated_model_and_baseline_artifact(tmp_path):
+    processed_path = tmp_path / "processed.csv"
+    artifacts_dir = tmp_path / "artifacts"
+    pd.DataFrame(_processed_rows()).to_csv(processed_path, index=False)
+
+    result = train_model(
+        processed_dataset_path=processed_path,
+        artifacts_dir=artifacts_dir,
+        test_size=0.25,
+        cv_splits=2,
+    )
+    metadata = json.loads(result["metadata_path"].read_text(encoding="utf-8"))
+    model = joblib.load(result["model_path"])
+    baseline_model = joblib.load(result["baseline_model_path"])
+
+    assert result["baseline_model_path"].exists()
+    assert metadata["calibration"]["enabled"] is True
+    assert metadata["calibration"]["method"] == "sigmoid"
+    assert metadata["model_type"] == "LogisticRegression"
+    assert isinstance(model.named_steps["classifier"], CalibratedClassifierCV)
+    assert isinstance(model.named_steps["classifier"].estimator, LogisticRegression)
+    assert isinstance(baseline_model.named_steps["classifier"], LogisticRegression)
 
 
 def test_training_features_do_not_include_outcome_or_prediction_columns():

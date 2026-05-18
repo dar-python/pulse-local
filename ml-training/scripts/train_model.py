@@ -4,6 +4,7 @@ from typing import Any
 
 import joblib
 import pandas as pd
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -28,7 +29,13 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 
 ARTIFACTS_DIR = BASE_DIR / "artifacts"
 MODEL_ARTIFACT_PATH = ARTIFACTS_DIR / "pulselocal_logistic_regression_model.joblib"
+BASELINE_MODEL_ARTIFACT_PATH = (
+    ARTIFACTS_DIR / "pulselocal_logistic_regression_baseline_model.joblib"
+)
 METADATA_ARTIFACT_PATH = ARTIFACTS_DIR / "pulselocal_model_metadata.json"
+CALIBRATION_METHOD = "sigmoid"
+CALIBRATED_REGULARIZATION_C = 0.001
+BASELINE_REGULARIZATION_C = 1.0
 
 TARGET_COLUMN = "is_fulfillment_risky"
 FEATURE_COLUMNS = [
@@ -58,7 +65,12 @@ RISK_THRESHOLDS = {
 }
 
 
-def build_pipeline() -> Pipeline:
+def build_pipeline(
+    *,
+    calibrated: bool = True,
+    calibration_cv_splits: int = 5,
+    regularization_c: float = CALIBRATED_REGULARIZATION_C,
+) -> Pipeline:
     numeric_transformer = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
@@ -79,13 +91,22 @@ def build_pipeline() -> Pipeline:
         ]
     )
 
+    classifier = LogisticRegression(
+        max_iter=1000,
+        random_state=42,
+        C=regularization_c,
+    )
+    if calibrated:
+        classifier = CalibratedClassifierCV(
+            estimator=classifier,
+            method=CALIBRATION_METHOD,
+            cv=calibration_cv_splits,
+        )
+
     return Pipeline(
         steps=[
             ("preprocessor", preprocessor),
-            (
-                "classifier",
-                LogisticRegression(max_iter=1000, random_state=42),
-            ),
+            ("classifier", classifier),
         ]
     )
 
@@ -117,7 +138,19 @@ def train_model(
         stratify=y,
     )
 
-    pipeline = build_pipeline()
+    calibration_cv_splits = _bounded_stratified_splits(y_train, cv_splits)
+
+    baseline_pipeline = build_pipeline(
+        calibrated=False,
+        regularization_c=BASELINE_REGULARIZATION_C,
+    )
+    baseline_pipeline.fit(x_train, y_train)
+
+    pipeline = build_pipeline(
+        calibrated=True,
+        calibration_cv_splits=calibration_cv_splits,
+        regularization_c=CALIBRATED_REGULARIZATION_C,
+    )
     pipeline.fit(x_train, y_train)
 
     y_pred = pipeline.predict(x_test)
@@ -125,15 +158,40 @@ def train_model(
     metrics = _classification_metrics(y_test, y_pred, y_score)
     cross_validation = _cross_validation_summary(pipeline, x, y, cv_splits)
 
+    baseline_y_pred = baseline_pipeline.predict(x_test)
+    baseline_y_score = baseline_pipeline.predict_proba(x_test)[:, 1]
+    baseline_metrics = _classification_metrics(
+        y_test,
+        baseline_y_pred,
+        baseline_y_score,
+    )
+    baseline_cross_validation = _cross_validation_summary(
+        baseline_pipeline,
+        x,
+        y,
+        cv_splits,
+    )
+
     artifacts_dir.mkdir(parents=True, exist_ok=True)
     model_path = artifacts_dir / MODEL_ARTIFACT_PATH.name
+    baseline_model_path = artifacts_dir / BASELINE_MODEL_ARTIFACT_PATH.name
     metadata_path = artifacts_dir / METADATA_ARTIFACT_PATH.name
 
     joblib.dump(pipeline, model_path)
+    joblib.dump(baseline_pipeline, baseline_model_path)
 
     metadata = {
         "model_name": "PulseLocal Logistic Regression Fulfillment Risk Model",
         "model_type": "LogisticRegression",
+        "base_model_artifact": baseline_model_path.name,
+        "calibration": {
+            "enabled": True,
+            "method": CALIBRATION_METHOD,
+            "cv_splits": calibration_cv_splits,
+            "calibrator": "CalibratedClassifierCV",
+            "base_estimator": "LogisticRegression",
+            "regularization_c": CALIBRATED_REGULARIZATION_C,
+        },
         "target_column": TARGET_COLUMN,
         "features": FEATURE_COLUMNS,
         "numeric_features": NUMERIC_FEATURES,
@@ -141,14 +199,24 @@ def train_model(
         "risk_thresholds": RISK_THRESHOLDS,
         "test_metrics": metrics,
         "cross_validation": cross_validation,
+        "baseline": {
+            "model_type": "LogisticRegression",
+            "calibration": {"enabled": False},
+            "regularization_c": BASELINE_REGULARIZATION_C,
+            "test_metrics": baseline_metrics,
+            "cross_validation": baseline_cross_validation,
+        },
     }
     metadata_path.write_text(json.dumps(metadata, indent=4) + "\n", encoding="utf-8")
 
     return {
         "model_path": model_path,
+        "baseline_model_path": baseline_model_path,
         "metadata_path": metadata_path,
         "metrics": metrics,
         "cross_validation": cross_validation,
+        "baseline_metrics": baseline_metrics,
+        "baseline_cross_validation": baseline_cross_validation,
     }
 
 
@@ -203,10 +271,23 @@ def _cross_validation_summary(
     }
 
 
+def _bounded_stratified_splits(y: pd.Series, requested_splits: int) -> int:
+    min_class_count = int(y.value_counts().min())
+    n_splits = min(requested_splits, min_class_count)
+
+    if n_splits < 2:
+        raise ValueError(
+            "Calibration requires at least two examples from each target class."
+        )
+
+    return n_splits
+
+
 def main() -> None:
     result = train_model()
 
     print(f"Created model artifact: {result['model_path']}")
+    print(f"Created baseline model artifact: {result['baseline_model_path']}")
     print(f"Created metadata artifact: {result['metadata_path']}")
     print("Test metrics:")
     for key, value in result["metrics"].items():

@@ -4,8 +4,10 @@ FastAPI service for the PulseLocal Sprint 1 checkout fulfillment risk bridge.
 Laravel calls this service to get a risk score, risk level, and recommendation
 for checkout inputs. Flutter must not call this service directly.
 
-This service loads the trained PulseLocal Logistic Regression sklearn Pipeline
-from `app/models/pulselocal_logistic_regression_model.joblib`.
+This service loads the calibrated PulseLocal Logistic Regression sklearn
+Pipeline from `app/models/pulselocal_logistic_regression_model.joblib`. The
+uncalibrated baseline is kept beside it as
+`app/models/pulselocal_logistic_regression_baseline_model.joblib`.
 
 If `MODEL_PATH` is set for local scripts or Docker, point it at:
 
@@ -35,6 +37,15 @@ current FastAPI app module.
 ```powershell
 python -m pytest
 ```
+
+## Scenario Distribution Check
+
+```powershell
+python scripts/check_scenario_distribution.py
+```
+
+The script prints each demo scenario, the trained model feature row, risk score,
+risk level, and summary stats for the baseline and active calibrated artifacts.
 
 ## Sample Request
 

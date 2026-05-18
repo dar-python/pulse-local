@@ -27,9 +27,14 @@ app = FastAPI(
 )
 
 
+SERVICE_DIR = Path(__file__).resolve().parents[1]
 MODEL_DIR = Path(__file__).resolve().parent / "models"
 CONFIGURED_MODEL_PATH = Path(settings.model_path)
-MODEL_PATH = CONFIGURED_MODEL_PATH if CONFIGURED_MODEL_PATH.is_absolute() else Path.cwd() / CONFIGURED_MODEL_PATH
+MODEL_PATH = (
+    CONFIGURED_MODEL_PATH
+    if CONFIGURED_MODEL_PATH.is_absolute()
+    else SERVICE_DIR / CONFIGURED_MODEL_PATH
+)
 METADATA_PATH = MODEL_DIR / "pulselocal_model_metadata.json"
 
 MODEL_FEATURE_COLUMNS = [
