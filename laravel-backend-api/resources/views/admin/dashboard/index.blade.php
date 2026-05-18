@@ -19,6 +19,81 @@
                 </section>
 
                 <div class="grid2" id="analytics">
+                    <div class="panel model-metadata-panel" data-model-metadata-panel>
+                        <div class="panel-header">
+                            <div>
+                                <h2>Trained Model Metadata</h2>
+                                <p id="modelMetadataSubtitle">Fetching trained model metadata from Laravel</p>
+                            </div>
+                            <div class="panel-actions">
+                                <span class="pill" id="modelMetadataStatus">Loading</span>
+                                <button class="action-btn review" id="modelMetadataRefresh" type="button">Refresh</button>
+                            </div>
+                        </div>
+
+                        <div class="metadata-state" id="modelMetadataLoading">Loading model metadata...</div>
+                        <div class="metadata-state metadata-error" id="modelMetadataError" hidden></div>
+                        <div class="metadata-state metadata-empty" id="modelMetadataEmpty" hidden>No trained model metadata was returned.</div>
+
+                        <div class="metadata-content" id="modelMetadataContent" hidden>
+                            <div class="model-identity">
+                                <div class="model-name-block">
+                                    <span>Model Name</span>
+                                    <strong id="modelName"></strong>
+                                </div>
+                                <div>
+                                    <span>Model Type</span>
+                                    <strong id="modelType"></strong>
+                                </div>
+                                <div>
+                                    <span>Target Column</span>
+                                    <strong id="targetColumn"></strong>
+                                </div>
+                                <div>
+                                    <span>Feature Count</span>
+                                    <strong id="featureCount"></strong>
+                                </div>
+                            </div>
+
+                            <div class="metadata-columns">
+                                <div class="metadata-list-card">
+                                    <strong>Numeric Features</strong>
+                                    <ul id="numericFeatures"></ul>
+                                </div>
+                                <div class="metadata-list-card">
+                                    <strong>Categorical Features</strong>
+                                    <ul id="categoricalFeatures"></ul>
+                                </div>
+                            </div>
+
+                            <div class="threshold-grid" id="riskThresholds"></div>
+
+                            <div class="section-label">Test Metrics</div>
+                            <div class="metadata-metric-grid" id="testMetrics"></div>
+
+                            <div class="section-label">Cross-validation</div>
+                            <div class="cv-grid">
+                                <div>
+                                    <span>Method</span>
+                                    <strong id="cvMethod"></strong>
+                                </div>
+                                <div>
+                                    <span>Splits</span>
+                                    <strong id="cvSplits"></strong>
+                                </div>
+                                <div>
+                                    <span>Mean ROC AUC</span>
+                                    <strong id="cvMean"></strong>
+                                </div>
+                                <div>
+                                    <span>Std. ROC AUC</span>
+                                    <strong id="cvStd"></strong>
+                                </div>
+                            </div>
+                            <div class="fold-scores" id="cvScores"></div>
+                        </div>
+                    </div>
+
                     <div class="panel">
                         <div class="panel-header">
                             <div>
@@ -28,31 +103,6 @@
                             <span class="pill">Mon - Sun</span>
                         </div>
                         <div class="chart-bars" id="riskChart"></div>
-                    </div>
-
-                    <div class="panel">
-                        <div class="panel-header">
-                            <div>
-                                <h2>Risk Distribution</h2>
-                                <p>Checkout-level prediction mix</p>
-                            </div>
-                        </div>
-                        <div class="donut-wrap">
-                            <svg class="donut-svg" viewBox="0 0 140 140" role="img" aria-label="Risk distribution">
-                                <circle cx="70" cy="70" r="52" fill="none" stroke="#1a7a2e" stroke-width="22" stroke-dasharray="157 327" stroke-dashoffset="0"/>
-                                <circle cx="70" cy="70" r="52" fill="none" stroke="#fca311" stroke-width="22" stroke-dasharray="82 327" stroke-dashoffset="-157"/>
-                                <circle cx="70" cy="70" r="52" fill="none" stroke="#c0392b" stroke-width="22" stroke-dasharray="59 327" stroke-dashoffset="-239"/>
-                                <circle cx="70" cy="70" r="52" fill="none" stroke="#b0bec8" stroke-width="22" stroke-dasharray="29 327" stroke-dashoffset="-298"/>
-                                <text x="70" y="67" text-anchor="middle" font-size="13" font-weight="800" fill="#14213d">Risk</text>
-                                <text x="70" y="81" text-anchor="middle" font-size="10" fill="#415a77">Mix</text>
-                            </svg>
-                            <div class="legend">
-                                <div class="leg-row"><span class="leg-left"><span class="leg-dot" style="background:#1a7a2e"></span><span class="badge low">Low</span></span><span>48%</span></div>
-                                <div class="leg-row"><span class="leg-left"><span class="leg-dot" style="background:#fca311"></span><span class="badge medium">Medium</span></span><span>25%</span></div>
-                                <div class="leg-row"><span class="leg-left"><span class="leg-dot" style="background:#c0392b"></span><span class="badge high">High</span></span><span>18%</span></div>
-                                <div class="leg-row"><span class="leg-left"><span class="leg-dot" style="background:#b0bec8"></span><span class="badge unknown">Unknown</span></span><span>9%</span></div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -285,7 +335,8 @@
 @push('scripts')
     <script>
         window.PulseLocalDashboard = {
-            chartBars: @json($dashboard['chartBars'])
+            chartBars: @json($dashboard['chartBars']),
+            metadataEndpoint: @json(url('/api/admin/model-metadata'))
         };
     </script>
     <script src="{{ asset('admin/js/dashboard.js') }}" defer></script>

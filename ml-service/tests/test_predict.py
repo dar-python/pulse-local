@@ -208,6 +208,82 @@ def test_health_endpoint_returns_healthy_status():
     }
 
 
+def test_metadata_endpoint_returns_trained_model_metadata():
+    ml_app.load_metadata.cache_clear()
+
+    response = client.get("/metadata")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["model_name"] == (
+        "PulseLocal Logistic Regression Fulfillment Risk Model"
+    )
+    assert payload["model_type"] == "LogisticRegression"
+    assert payload["target_column"] == "is_fulfillment_risky"
+    assert payload["features"] == [
+        "Distance_km",
+        "Weather",
+        "Traffic_Level",
+        "Time_of_Day",
+        "Vehicle_Type",
+        "Preparation_Time_min",
+        "Courier_Experience_yrs",
+    ]
+    assert payload["numeric_features"] == [
+        "Distance_km",
+        "Preparation_Time_min",
+        "Courier_Experience_yrs",
+    ]
+    assert payload["categorical_features"] == [
+        "Weather",
+        "Traffic_Level",
+        "Time_of_Day",
+        "Vehicle_Type",
+    ]
+    assert payload["risk_thresholds"]["medium"] == {"min": 0.4, "max": 0.69}
+    assert payload["test_metrics"]["accuracy"] == 0.92
+    assert payload["cross_validation"]["method"] == "StratifiedKFold"
+    assert len(payload["cross_validation"]["scores"]) == 5
+
+
+def test_metadata_endpoint_returns_structured_error_when_file_is_missing(
+    monkeypatch,
+    tmp_path,
+):
+    monkeypatch.setattr(ml_app, "METADATA_PATH", tmp_path / "missing_metadata.json")
+    ml_app.load_metadata.cache_clear()
+
+    response = client.get("/metadata")
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": {
+            "error": "model_metadata_unavailable",
+            "message": "Trained model metadata file is missing.",
+        }
+    }
+
+
+def test_metadata_endpoint_returns_structured_error_when_file_is_invalid(
+    monkeypatch,
+    tmp_path,
+):
+    metadata_path = tmp_path / "pulselocal_model_metadata.json"
+    metadata_path.write_text("{invalid-json", encoding="utf-8")
+    monkeypatch.setattr(ml_app, "METADATA_PATH", metadata_path)
+    ml_app.load_metadata.cache_clear()
+
+    response = client.get("/metadata")
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": {
+            "error": "model_metadata_invalid",
+            "message": "Trained model metadata file is invalid.",
+        }
+    }
+
+
 def test_app_startup_warms_model_and_metadata(monkeypatch):
     calls = []
 

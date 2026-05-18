@@ -17,10 +17,22 @@ class EnsureAdminSession
         $user = Auth::user();
 
         if (! $user) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => 'Unauthenticated.',
+                ], 401);
+            }
+
             return redirect()->route('admin.login');
         }
 
         if (! method_exists($user, 'isAdminUser') || ! $user->isAdminUser()) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => 'Forbidden.',
+                ], 403);
+            }
+
             abort(403);
         }
 
