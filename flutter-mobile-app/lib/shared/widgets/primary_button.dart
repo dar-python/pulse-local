@@ -23,33 +23,46 @@ class PrimaryButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: 50,
-      child: Material(
-        color: enabled ? AppColors.orange : AppColors.dusk,
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        decoration: BoxDecoration(
+          color: enabled ? AppColors.orange : AppColors.dusk.withAlpha(170),
           borderRadius: BorderRadius.circular(10),
-          onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (leading != null) ...[leading!, const SizedBox(width: 8)],
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: enabled ? AppColors.prussian : AppColors.silver,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
+          border: Border.all(
+            color: enabled ? AppColors.orange : AppColors.white.withAlpha(18),
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: onPressed,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (leading != null) ...[leading!, const SizedBox(width: 8)],
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: enabled ? AppColors.prussian : AppColors.silver,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
-                ),
-                if (trailing != null) ...[const SizedBox(width: 8), trailing!],
-              ],
+                  if (trailing != null) ...[
+                    const SizedBox(width: 8),
+                    trailing!,
+                  ],
+                ],
+              ),
             ),
           ),
         ),

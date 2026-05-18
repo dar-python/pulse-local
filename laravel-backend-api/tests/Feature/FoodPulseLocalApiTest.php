@@ -124,12 +124,62 @@ class FoodPulseLocalApiTest extends TestCase
         ]);
 
         $response->assertUnprocessable()
+            ->assertJson([
+                'success' => false,
+                'message' => 'Validation failed.',
+            ])
             ->assertJsonValidationErrors([
                 'items.0.menu_item_id',
                 'items.1.quantity',
                 'payment_method',
                 'delivery_address',
-            ]);
+            ])
+            ->assertJsonMissingPath('exception')
+            ->assertJsonMissingPath('trace');
+
+        $this->assertSame(['success', 'message', 'errors'], array_keys($response->json()));
+    }
+
+    public function test_cart_checkout_endpoint_rejects_unknown_restaurant(): void
+    {
+        $response = $this->postJson('/api/cart/checkout', [
+            ...$this->checkoutPayload(),
+            'restaurant_id' => 999,
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJson([
+                'success' => false,
+                'message' => 'Validation failed.',
+            ])
+            ->assertJsonValidationErrors(['restaurant_id']);
+
+        $this->assertSame(
+            'The selected restaurant is unavailable.',
+            $response->json('errors')['restaurant_id'][0]
+        );
+    }
+
+    public function test_cart_checkout_endpoint_rejects_unknown_menu_item(): void
+    {
+        $response = $this->postJson('/api/cart/checkout', [
+            ...$this->checkoutPayload(),
+            'items' => [
+                ['menu_item_id' => 999, 'quantity' => 1],
+            ],
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJson([
+                'success' => false,
+                'message' => 'Validation failed.',
+            ])
+            ->assertJsonValidationErrors(['items.0.menu_item_id']);
+
+        $this->assertSame(
+            'The selected menu item is unavailable.',
+            $response->json('errors')['items.0.menu_item_id'][0]
+        );
     }
 
     public function test_cart_checkout_endpoint_rejects_items_for_a_different_restaurant(): void
@@ -140,7 +190,57 @@ class FoodPulseLocalApiTest extends TestCase
         ]);
 
         $response->assertUnprocessable()
+            ->assertJson([
+                'success' => false,
+                'message' => 'Validation failed.',
+            ])
             ->assertJsonValidationErrors(['items.0.menu_item_id']);
+
+        $this->assertSame(
+            'The selected menu item is not available from this restaurant.',
+            $response->json('errors')['items.0.menu_item_id'][0]
+        );
+    }
+
+    public function test_cart_checkout_endpoint_rejects_empty_delivery_address(): void
+    {
+        $response = $this->postJson('/api/cart/checkout', [
+            ...$this->checkoutPayload(),
+            'delivery_address' => [
+                'label' => '   ',
+            ],
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJson([
+                'success' => false,
+                'message' => 'Validation failed.',
+            ])
+            ->assertJsonValidationErrors(['delivery_address.label']);
+
+        $this->assertSame(
+            'Enter a delivery address before checkout.',
+            $response->json('errors')['delivery_address.label'][0]
+        );
+    }
+
+    public function test_cart_checkout_endpoint_rejects_invalid_payment_method(): void
+    {
+        $response = $this->postJson('/api/cart/checkout', [
+            ...$this->checkoutPayload(),
+            'payment_method' => 'wallet',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJson([
+                'success' => false,
+                'message' => 'Validation failed.',
+            ])
+            ->assertJsonValidationErrors(['payment_method'])
+            ->assertJsonPath(
+                'errors.payment_method.0',
+                'Choose a supported payment method.'
+            );
     }
 
     public function test_order_confirmation_endpoint_returns_confirmed_local_order(): void

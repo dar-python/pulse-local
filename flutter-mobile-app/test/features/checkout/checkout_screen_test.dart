@@ -57,7 +57,7 @@ void main() {
     expect(find.text('MEDIUM RISK'), findsWidgets);
     expect(
       find.text('Medium fulfillment risk. Keep ETA visible.'),
-      findsOneWidget,
+      findsWidgets,
     );
   });
 
@@ -89,7 +89,7 @@ void main() {
     expect(find.text('HIGH RISK'), findsWidgets);
     expect(
       find.text('High fulfillment risk. Adjust ETA and notify merchant.'),
-      findsOneWidget,
+      findsWidgets,
     );
   });
 

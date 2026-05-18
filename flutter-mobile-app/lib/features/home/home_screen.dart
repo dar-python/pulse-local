@@ -235,6 +235,8 @@ class _HomeContentState extends State<_HomeContent> {
               ),
               const SizedBox(height: 10),
             ],
+            if (!_isLoadingRestaurants && _restaurants.isEmpty)
+              const _EmptyRestaurantsState(),
             for (final restaurant in _restaurants) ...[
               _RestaurantCard(restaurant: restaurant),
               const SizedBox(height: 10),
@@ -595,10 +597,13 @@ class _DataStatusBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       color: AppColors.white.withAlpha(12),
-      borderColor: AppColors.white.withAlpha(26),
+      borderColor: isLoading
+          ? AppColors.orange.withAlpha(48)
+          : AppColors.white.withAlpha(26),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (isLoading)
             const SizedBox(
@@ -617,15 +622,71 @@ class _DataStatusBanner extends StatelessWidget {
             ),
           const SizedBox(width: 9),
           Expanded(
-            child: Text(
-              isLoading
-                  ? 'Loading restaurants from Laravel...'
-                  : message ?? 'Using saved local restaurant data.',
-              style: const TextStyle(
-                color: AppColors.silver,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isLoading ? 'Loading restaurants' : 'Local fallback active',
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  isLoading
+                      ? 'Fetching local test data from Laravel...'
+                      : message ?? 'Using saved local restaurant data.',
+                  style: const TextStyle(
+                    color: AppColors.silver,
+                    fontSize: 11,
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyRestaurantsState extends StatelessWidget {
+  const _EmptyRestaurantsState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.storefront_outlined, color: AppColors.orange, size: 20),
+          SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'No restaurants available right now.',
+                  style: TextStyle(
+                    color: AppColors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'The local demo can retry when Laravel returns data.',
+                  style: TextStyle(
+                    color: AppColors.silver,
+                    fontSize: 11,
+                    height: 1.35,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

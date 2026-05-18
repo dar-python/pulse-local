@@ -24,15 +24,21 @@ class CheckoutScreen extends StatefulWidget {
     super.key,
     Restaurant? restaurant,
     List<CartItem>? items,
+    FoodPulseDeliveryAddress? deliveryAddress,
+    String? initialPaymentMethod,
     FoodPulseCheckoutRiskRepository? checkoutRiskRepository,
     FoodPulseRepository? foodPulseRepository,
   }) : _restaurant = restaurant,
        _items = items,
+       _deliveryAddress = deliveryAddress,
+       _initialPaymentMethod = initialPaymentMethod,
        _checkoutRiskRepository = checkoutRiskRepository,
        _foodPulseRepository = foodPulseRepository;
 
   final Restaurant? _restaurant;
   final List<CartItem>? _items;
+  final FoodPulseDeliveryAddress? _deliveryAddress;
+  final String? _initialPaymentMethod;
   final FoodPulseCheckoutRiskRepository? _checkoutRiskRepository;
   final FoodPulseRepository? _foodPulseRepository;
 
@@ -50,18 +56,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     addressComplexity: 'medium',
     paymentMethod: 'cod',
   );
-  static const _deliveryAddress = FoodPulseDeliveryAddress(
+  static const _defaultDeliveryAddress = FoodPulseDeliveryAddress(
     label: 'Marasbaras, Tacloban City',
     notes: 'Zone 7 · Leyte, Philippines',
   );
 
   late final Restaurant _restaurant;
   late final List<CartItem> _items;
+  late final FoodPulseDeliveryAddress _deliveryAddress;
   late final FoodPulseCheckoutRiskRepository _checkoutRiskRepository;
   FoodPulseRepository? _foodPulseRepository;
-  String _paymentMethod = 'cod';
+  String? _paymentMethod;
   bool _isRiskLoading = true;
   bool _isSubmittingOrder = false;
+  String? _orderProgressLabel;
   RiskPredictionResponse? _riskPrediction;
   String? _riskErrorMessage;
   String? _orderErrorMessage;
@@ -71,6 +79,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.initState();
     _restaurant = widget._restaurant ?? MockFoodPulseData.restaurants.first;
     _items = widget._items ?? MockFoodPulseData.defaultCart;
+    _deliveryAddress = widget._deliveryAddress ?? _defaultDeliveryAddress;
+    _paymentMethod = widget._initialPaymentMethod ?? 'cod';
     _checkoutRiskRepository =
         widget._checkoutRiskRepository ??
         LaravelFoodPulseCheckoutRiskRepository();
@@ -146,6 +156,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ? const _RiskLoadingGauge()
                           : RiskGauge(risk: risk),
                     ),
+                    _RiskSummary(
+                      risk: risk,
+                      isLoading: _isRiskLoading,
+                      prediction: _riskPrediction,
+                      errorMessage: _riskErrorMessage,
+                    ),
+                    const SizedBox(height: 10),
                     const Wrap(
                       spacing: 6,
                       runSpacing: 6,
@@ -220,31 +237,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               const SizedBox(height: 14),
               const _SectionTitle('Delivery Address'),
               const SizedBox(height: 8),
-              const AppCard(
+              AppCard(
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.location_on_outlined,
                       color: AppColors.orange,
                       size: 19,
                     ),
-                    SizedBox(width: 9),
+                    const SizedBox(width: 9),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Marasbaras, Tacloban City',
-                            style: TextStyle(
+                            _deliveryAddress.label.trim().isEmpty
+                                ? 'Delivery address missing'
+                                : _deliveryAddress.label,
+                            style: const TextStyle(
                               color: AppColors.white,
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          SizedBox(height: 3),
+                          const SizedBox(height: 3),
                           Text(
-                            'Zone 7 · Leyte, Philippines',
-                            style: TextStyle(
+                            (_deliveryAddress.notes?.trim().isNotEmpty ?? false)
+                                ? _deliveryAddress.notes!
+                                : 'Add delivery notes before checkout',
+                            style: const TextStyle(
                               color: AppColors.silver,
                               fontSize: 11,
                             ),
@@ -252,7 +273,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ],
                       ),
                     ),
-                    Text(
+                    const Text(
                       'Edit',
                       style: TextStyle(
                         color: AppColors.orange,
@@ -342,9 +363,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 const SizedBox(height: 12),
               ],
               PrimaryButton(
-                label: _isSubmittingOrder
-                    ? 'Placing Order...'
-                    : 'Place Order · ₱$total',
+                label: _orderProgressLabel ?? 'Place Order · ₱$total',
+                leading: _isSubmittingOrder ? const _ButtonSpinner() : null,
                 onPressed: _isSubmittingOrder ? null : _placeOrder,
               ),
               const SizedBox(height: 10),
@@ -427,21 +447,48 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _placeOrder() async {
+    if (_isSubmittingOrder) {
+      return;
+    }
+
+    final validationMessage = _checkoutValidationMessage();
+    if (validationMessage != null) {
+      setState(() => _orderErrorMessage = validationMessage);
+      return;
+    }
+
+    if (_requiresHighRiskConfirmation) {
+      final shouldContinue = await _showHighRiskWarning();
+      if (shouldContinue != true) {
+        return;
+      }
+    }
+
+    await _submitOrder();
+  }
+
+  Future<void> _submitOrder() async {
     final repository = _foodPulseRepository ?? LaravelFoodPulseRepository();
     final request = CheckoutCartRequest(
       restaurant: _restaurant,
       items: _items,
-      paymentMethod: _paymentMethod,
+      paymentMethod: _paymentMethod!,
       deliveryAddress: _deliveryAddress,
     );
 
     setState(() {
       _isSubmittingOrder = true;
+      _orderProgressLabel = 'Placing Order...';
       _orderErrorMessage = null;
     });
 
     try {
       final checkoutResult = await repository.checkoutCart(request);
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _orderProgressLabel = 'Loading confirmation...');
       final rawConfirmationResult = checkoutResult.usedFallback
           ? FoodPulseResult.fallback(
               OrderConfirmation.fromCheckout(checkoutResult.data),
@@ -459,7 +506,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return;
       }
 
-      setState(() => _isSubmittingOrder = false);
+      setState(() {
+        _isSubmittingOrder = false;
+        _orderProgressLabel = null;
+      });
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => ConfirmedScreen(
@@ -483,7 +533,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       setState(() {
         _isSubmittingOrder = false;
-        _orderErrorMessage = message;
+        _orderProgressLabel = null;
+        _orderErrorMessage = null;
       });
       Navigator.of(context).push(
         MaterialPageRoute<void>(
@@ -494,6 +545,133 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
       );
     }
+  }
+
+  String? _checkoutValidationMessage() {
+    if (_items.isEmpty) {
+      return 'Add at least one item before checkout.';
+    }
+    if (_items.any((item) => item.quantity <= 0)) {
+      return 'Cart item quantities must be positive.';
+    }
+    if (_restaurant.id <= 0 || _restaurant.name.trim().isEmpty) {
+      return 'Choose a restaurant before checkout.';
+    }
+    if (_deliveryAddress.label.trim().isEmpty) {
+      return 'Enter a delivery address before placing your order.';
+    }
+    if (_paymentMethod == null || _paymentMethod!.trim().isEmpty) {
+      return 'Choose a payment method before placing your order.';
+    }
+
+    return null;
+  }
+
+  bool get _requiresHighRiskConfirmation {
+    if (_isLaravelFallback(_riskPrediction)) {
+      return false;
+    }
+
+    final risk = _displayRisk;
+    return risk.label.toLowerCase() == 'high' || risk.score >= 70;
+  }
+
+  Future<bool?> _showHighRiskWarning() {
+    final risk = _displayRisk;
+    final recommendation =
+        _riskPrediction?.recommendation ??
+        'Expect possible ETA adjustments before the rider is assigned.';
+
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.prussian,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: AppColors.tangerine.withAlpha(110)),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+          contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+          actionsPadding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+          title: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.tangerine.withAlpha(32),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.tangerine.withAlpha(88)),
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: AppColors.tangerine,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'High fulfillment risk',
+                  style: TextStyle(
+                    color: AppColors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${risk.score}% ${risk.label.toLowerCase()} risk detected before checkout.',
+                style: const TextStyle(
+                  color: AppColors.alabaster,
+                  fontSize: 12,
+                  height: 1.45,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                recommendation,
+                style: const TextStyle(
+                  color: AppColors.silver,
+                  fontSize: 12,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text(
+                'Review',
+                style: TextStyle(
+                  color: AppColors.silver,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                'Continue Order',
+                style: TextStyle(
+                  color: AppColors.orange,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _loadCheckoutRisk() async {
@@ -536,6 +714,83 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     return prediction.source.toLowerCase() == 'laravel-fallback' ||
         prediction.riskLevel.toLowerCase() == 'unknown';
+  }
+}
+
+class _RiskSummary extends StatelessWidget {
+  const _RiskSummary({
+    required this.risk,
+    required this.isLoading,
+    required this.prediction,
+    required this.errorMessage,
+  });
+
+  final RiskInfo risk;
+  final bool isLoading;
+  final RiskPredictionResponse? prediction;
+  final String? errorMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = isLoading
+        ? 'Risk calculation in progress'
+        : errorMessage != null
+        ? 'Risk service unavailable'
+        : '${risk.label} fulfillment risk';
+    final body = isLoading
+        ? 'Laravel is calculating the checkout risk before order submission.'
+        : errorMessage ??
+              prediction?.recommendation ??
+              'Proceed with standard checkout handling.';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: risk.color.withAlpha(isLoading ? 16 : 24),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: risk.color.withAlpha(52)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: risk.color,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            body,
+            style: const TextStyle(
+              color: AppColors.alabaster,
+              fontSize: 11,
+              height: 1.45,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ButtonSpinner extends StatelessWidget {
+  const _ButtonSpinner();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 16,
+      height: 16,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        color: AppColors.prussian,
+      ),
+    );
   }
 }
 

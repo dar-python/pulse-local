@@ -22,6 +22,7 @@ class CartScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final restaurant = _restaurant ?? MockFoodPulseData.restaurants.first;
     final items = _items ?? MockFoodPulseData.defaultCart;
+    final isCartEmpty = items.isEmpty;
     final subtotal = MockFoodPulseData.subtotalFor(items);
     final total = MockFoodPulseData.totalFor(items);
 
@@ -73,99 +74,148 @@ class CartScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              for (final cartItem in items)
-                _CartItemRow(
-                  emoji: cartItem.item.emoji,
-                  name: cartItem.item.name,
-                  price: cartItem.item.price,
-                  quantity: cartItem.quantity,
-                  lineTotal: cartItem.lineTotal,
-                ),
-              const SizedBox(height: 12),
-              AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Order Summary',
-                      style: TextStyle(
-                        color: AppColors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _SummaryRow(label: 'Subtotal', value: subtotal),
-                    const SizedBox(height: 6),
-                    const _SummaryRow(
-                      label: 'Delivery Fee',
-                      value: MockFoodPulseData.deliveryFee,
-                    ),
-                    const SizedBox(height: 6),
-                    const _SummaryRow(
-                      label: 'Service Charge',
-                      value: MockFoodPulseData.serviceCharge,
-                    ),
-                    Divider(height: 20, color: AppColors.white.withAlpha(16)),
-                    _SummaryRow(label: 'Total', value: total, emphasized: true),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              CustomPaint(
-                painter: _DashedBorderPainter(),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 13,
-                    vertical: 12,
+              if (isCartEmpty)
+                const _EmptyCartState()
+              else ...[
+                for (final cartItem in items)
+                  _CartItemRow(
+                    emoji: cartItem.item.emoji,
+                    name: cartItem.item.name,
+                    price: cartItem.item.price,
+                    quantity: cartItem.quantity,
+                    lineTotal: cartItem.lineTotal,
                   ),
-                  child: const Row(
+                const SizedBox(height: 12),
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.local_offer_outlined,
-                        color: AppColors.orange,
-                        size: 18,
-                      ),
-                      SizedBox(width: 9),
-                      Expanded(
-                        child: Text(
-                          'Add promo code',
-                          style: TextStyle(
-                            color: AppColors.silver,
-                            fontSize: 12,
-                          ),
+                      const Text(
+                        'Order Summary',
+                        style: TextStyle(
+                          color: AppColors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
-                      Icon(
-                        Icons.add_rounded,
-                        color: AppColors.orange,
-                        size: 18,
+                      const SizedBox(height: 10),
+                      _SummaryRow(label: 'Subtotal', value: subtotal),
+                      const SizedBox(height: 6),
+                      const _SummaryRow(
+                        label: 'Delivery Fee',
+                        value: MockFoodPulseData.deliveryFee,
+                      ),
+                      const SizedBox(height: 6),
+                      const _SummaryRow(
+                        label: 'Service Charge',
+                        value: MockFoodPulseData.serviceCharge,
+                      ),
+                      Divider(height: 20, color: AppColors.white.withAlpha(16)),
+                      _SummaryRow(
+                        label: 'Total',
+                        value: total,
+                        emphasized: true,
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              PrimaryButton(
-                label: 'Proceed to Checkout →',
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => CheckoutScreen(
-                      restaurant: restaurant,
-                      items: items,
-                      checkoutRiskRepository:
-                          FoodPulseCheckoutRiskScope.maybeOf(context),
-                      foodPulseRepository: FoodPulseRepositoryScope.maybeOf(
-                        context,
+                const SizedBox(height: 12),
+                CustomPaint(
+                  painter: _DashedBorderPainter(),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 13,
+                      vertical: 12,
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.local_offer_outlined,
+                          color: AppColors.orange,
+                          size: 18,
+                        ),
+                        SizedBox(width: 9),
+                        Expanded(
+                          child: Text(
+                            'Add promo code',
+                            style: TextStyle(
+                              color: AppColors.silver,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.add_rounded,
+                          color: AppColors.orange,
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                PrimaryButton(
+                  label: 'Proceed to Checkout →',
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => CheckoutScreen(
+                        restaurant: restaurant,
+                        items: items,
+                        checkoutRiskRepository:
+                            FoodPulseCheckoutRiskScope.maybeOf(context),
+                        foodPulseRepository: FoodPulseRepositoryScope.maybeOf(
+                          context,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyCartState extends StatelessWidget {
+  const _EmptyCartState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.shopping_cart_outlined, color: AppColors.orange, size: 20),
+          SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your cart is empty.',
+                  style: TextStyle(
+                    color: AppColors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Add at least one dish before moving to checkout.',
+                  style: TextStyle(
+                    color: AppColors.silver,
+                    fontSize: 11,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

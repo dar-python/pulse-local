@@ -6,6 +6,7 @@ import '../../core/models/menu_item.dart';
 import '../../core/models/restaurant.dart';
 import '../../core/models/risk_info.dart';
 import '../../core/theme/app_colors.dart';
+import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../cart/cart_screen.dart';
 import '../foodpulse/repositories/foodpulse_repository.dart';
@@ -85,6 +86,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
         _menuItems = result.data.items;
         _menuMessage = result.usedFallback ? result.message : null;
         _isLoadingMenu = false;
+        _removeUnavailableCartItems();
 
         final tabs = _tabsFor(_menuItems);
         if (!tabs.contains(_selectedTab)) {
@@ -100,8 +102,14 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
         _menuItems = MockFoodPulseData.menuItems;
         _menuMessage = 'Using saved local menu data.';
         _isLoadingMenu = false;
+        _removeUnavailableCartItems();
       });
     }
+  }
+
+  void _removeUnavailableCartItems() {
+    final menuItemIds = _menuItems.map((item) => item.id).toSet();
+    _cart.removeWhere((itemId, _) => !menuItemIds.contains(itemId));
   }
 
   List<String> _tabsFor(List<MenuItem> items) {
@@ -356,37 +364,60 @@ class _MenuStatusBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
-      child: Row(
-        children: [
-          if (isLoading)
-            const SizedBox(
-              width: 15,
-              height: 15,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
+      child: AppCard(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        color: AppColors.white.withAlpha(11),
+        borderColor: isLoading
+            ? AppColors.orange.withAlpha(48)
+            : AppColors.white.withAlpha(24),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isLoading)
+              const SizedBox(
+                width: 15,
+                height: 15,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.orange,
+                ),
+              )
+            else
+              const Icon(
+                Icons.info_outline_rounded,
                 color: AppColors.orange,
+                size: 16,
               ),
-            )
-          else
-            const Icon(
-              Icons.info_outline_rounded,
-              color: AppColors.orange,
-              size: 16,
-            ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              isLoading
-                  ? 'Loading menu from Laravel...'
-                  : message ?? 'Using saved local menu data.',
-              style: const TextStyle(
-                color: AppColors.silver,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isLoading ? 'Loading menu' : 'Saved menu in use',
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    isLoading
+                        ? 'Fetching dishes from Laravel local data...'
+                        : message ?? 'Using saved local menu data.',
+                    style: const TextStyle(
+                      color: AppColors.silver,
+                      fontSize: 11,
+                      height: 1.35,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -399,11 +430,39 @@ class _EmptyMenuState extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Text(
-          'No menu items are available right now.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.silver, fontSize: 12),
+        padding: EdgeInsets.all(18),
+        child: AppCard(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.restaurant_menu, color: AppColors.orange, size: 20),
+              SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'No menu items are available right now.',
+                      style: TextStyle(
+                        color: AppColors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'This restaurant is reachable, but no local dishes were returned.',
+                      style: TextStyle(
+                        color: AppColors.silver,
+                        fontSize: 11,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

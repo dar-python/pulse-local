@@ -168,6 +168,10 @@ class CheckoutRiskApiTest extends TestCase
         $response = $this->postJson('/api/checkout/risk', []);
 
         $response->assertUnprocessable()
+            ->assertJson([
+                'success' => false,
+                'message' => 'Validation failed.',
+            ])
             ->assertJsonValidationErrors([
                 'rider_to_order_ratio',
                 'merchant_prep_time',
@@ -176,7 +180,11 @@ class CheckoutRiskApiTest extends TestCase
                 'delivery_distance_km',
                 'address_complexity',
                 'payment_method',
-            ]);
+            ])
+            ->assertJsonMissingPath('exception')
+            ->assertJsonMissingPath('trace');
+
+        $this->assertSame(['success', 'message', 'errors'], array_keys($response->json()));
     }
 
     public function test_checkout_risk_endpoint_rejects_values_not_supported_by_fastapi(): void
@@ -189,11 +197,17 @@ class CheckoutRiskApiTest extends TestCase
         ]);
 
         $response->assertUnprocessable()
+            ->assertJson([
+                'success' => false,
+                'message' => 'Validation failed.',
+            ])
             ->assertJsonValidationErrors([
                 'merchant_prep_time',
                 'weather_category',
                 'payment_method',
-            ]);
+            ])
+            ->assertJsonMissingPath('exception')
+            ->assertJsonMissingPath('trace');
     }
 
     private function validPayload(): array

@@ -40,6 +40,51 @@ class ConfirmedScreen extends StatelessWidget {
           ]
         : order.trackingSteps;
 
+    if (order.orderNumber.trim().isEmpty) {
+      return Scaffold(
+        backgroundColor: AppColors.prussian,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 28, 18, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const AppCard(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: AppColors.orange,
+                        size: 20,
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Order confirmation is unavailable.',
+                          style: TextStyle(
+                            color: AppColors.silver,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                PrimaryButton(
+                  label: 'Back to Home',
+                  onPressed: () =>
+                      Navigator.of(context).popUntil((route) => route.isFirst),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.prussian,
       body: SafeArea(
@@ -120,16 +165,42 @@ class ConfirmedScreen extends StatelessWidget {
               ],
               const SizedBox(height: 18),
               AppCard(
+                borderColor: risk.color.withAlpha(64),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'FoodPulse Risk Monitor',
-                      style: TextStyle(
-                        color: AppColors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'FoodPulse Risk Monitor',
+                            style: TextStyle(
+                              color: AppColors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: risk.color.withAlpha(32),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: risk.color.withAlpha(72)),
+                          ),
+                          child: Text(
+                            risk.badgeLabel,
+                            style: TextStyle(
+                              color: risk.color,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 11),
                     Row(
@@ -145,8 +216,8 @@ class ConfirmedScreen extends StatelessWidget {
                         ),
                         Text(
                           '${risk.score}% · adjusting ETA',
-                          style: const TextStyle(
-                            color: AppColors.orange,
+                          style: TextStyle(
+                            color: risk.color,
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
                           ),
@@ -161,6 +232,30 @@ class ConfirmedScreen extends StatelessWidget {
                         minHeight: 6,
                         backgroundColor: AppColors.white.withAlpha(20),
                         valueColor: AlwaysStoppedAnimation<Color>(risk.color),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.white.withAlpha(10),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.white.withAlpha(18),
+                        ),
+                      ),
+                      child: Text(
+                        order.risk.recommendation,
+                        style: const TextStyle(
+                          color: AppColors.alabaster,
+                          fontSize: 11,
+                          height: 1.45,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],

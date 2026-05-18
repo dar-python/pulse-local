@@ -2,10 +2,13 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ReturnsApiValidationErrors;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CheckoutRiskRequest extends FormRequest
 {
+    use ReturnsApiValidationErrors;
+
     public function authorize(): bool
     {
         return true;
