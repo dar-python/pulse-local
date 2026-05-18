@@ -37,6 +37,12 @@ class CheckoutRiskApiTest extends TestCase
                 ],
             ]);
 
+        $this->assertSame(['success', 'source', 'data'], array_keys($response->json()));
+        $this->assertSame(
+            ['risk_score', 'risk_level', 'recommendation'],
+            array_keys($response->json('data'))
+        );
+
         Http::assertSent(fn ($request) => $request->url() === 'http://ml-service:8001/predict'
             && $request['rider_to_order_ratio'] === 0.45
             && $request['merchant_prep_time'] === 25
@@ -69,9 +75,11 @@ class CheckoutRiskApiTest extends TestCase
                 ],
             ])
             ->assertJsonMissingPath('debug');
+
+        $this->assertSame(['success', 'source', 'data'], array_keys($response->json()));
     }
 
-    public function test_checkout_risk_fallback_logs_exception_and_returns_debug_when_enabled(): void
+    public function test_checkout_risk_fallback_logs_exception_without_exposing_debug_internals(): void
     {
         config([
             'app.debug' => true,
@@ -98,13 +106,44 @@ class CheckoutRiskApiTest extends TestCase
             ->assertJson([
                 'success' => true,
                 'source' => 'laravel-fallback',
-                'debug' => [
-                    'exception' => RuntimeException::class,
-                    'message' => 'ML service returned HTTP 500: {"error":"unavailable"}',
-                    'ml_service_url' => 'http://ml-service:8001',
-                    'prediction_url' => 'http://ml-service:8001/predict',
+                'data' => [
+                    'risk_score' => 0.50,
+                    'risk_level' => 'Unknown',
+                    'recommendation' => 'Prediction service unavailable. Proceed with standard checkout risk.',
                 ],
-            ]);
+            ])
+            ->assertJsonMissingPath('debug')
+            ->assertJsonMissingPath('exception')
+            ->assertJsonMissingPath('trace')
+            ->assertJsonMissingPath('ml_service_url')
+            ->assertJsonMissingPath('prediction_url');
+
+        $this->assertSame(['success', 'source', 'data'], array_keys($response->json()));
+    }
+
+    public function test_checkout_risk_endpoint_returns_fallback_when_ml_service_times_out(): void
+    {
+        config([
+            'app.debug' => true,
+            'services.ml_service.url' => 'http://ml-service:8001',
+            'services.ml_service.timeout' => 1,
+        ]);
+
+        Http::fake(fn () => throw new ConnectionException('cURL error 28: Operation timed out'));
+
+        $response = $this->postJson('/api/checkout/risk', $this->validPayload());
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'source' => 'laravel-fallback',
+                'data' => [
+                    'risk_score' => 0.50,
+                    'risk_level' => 'Unknown',
+                    'recommendation' => 'Prediction service unavailable. Proceed with standard checkout risk.',
+                ],
+            ])
+            ->assertJsonMissingPath('debug');
     }
 
     public function test_ml_service_client_posts_to_configured_predict_endpoint(): void
@@ -144,12 +183,14 @@ class CheckoutRiskApiTest extends TestCase
     {
         $response = $this->postJson('/api/checkout/risk', [
             ...$this->validPayload(),
+            'merchant_prep_time' => 0,
             'weather_category' => 'cloudy',
             'payment_method' => 'wallet',
         ]);
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors([
+                'merchant_prep_time',
                 'weather_category',
                 'payment_method',
             ]);

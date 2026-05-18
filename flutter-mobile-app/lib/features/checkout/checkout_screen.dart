@@ -2,27 +2,60 @@ import 'package:flutter/material.dart';
 
 import '../../core/data/mock_foodpulse_data.dart';
 import '../../core/models/risk_info.dart';
+import '../../core/network/api_exception.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/risk_color_mapper.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/payment_tile.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../../shared/widgets/risk_chip.dart';
 import '../../shared/widgets/risk_gauge.dart';
+import '../checkout_risk/models/checkout_risk_request.dart';
+import '../checkout_risk/models/risk_prediction_response.dart';
 import '../order/confirmed_screen.dart';
+import 'repositories/foodpulse_checkout_risk_repository.dart';
 
 class CheckoutScreen extends StatefulWidget {
-  const CheckoutScreen({super.key});
+  const CheckoutScreen({
+    super.key,
+    FoodPulseCheckoutRiskRepository? checkoutRiskRepository,
+  }) : _checkoutRiskRepository = checkoutRiskRepository;
+
+  final FoodPulseCheckoutRiskRepository? _checkoutRiskRepository;
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  String _paymentMethod = 'gcash';
+  static const _checkoutRiskRequest = CheckoutRiskRequest(
+    riderToOrderRatio: 0.45,
+    merchantPrepTime: 25,
+    trafficCorridorIntensity: 'high',
+    weatherCategory: 'rainy',
+    deliveryDistanceKm: 4.2,
+    addressComplexity: 'medium',
+    paymentMethod: 'cod',
+  );
+
+  late final FoodPulseCheckoutRiskRepository _checkoutRiskRepository;
+  String _paymentMethod = 'cod';
+  bool _isRiskLoading = true;
+  RiskPredictionResponse? _riskPrediction;
+  String? _riskErrorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkoutRiskRepository =
+        widget._checkoutRiskRepository ??
+        LaravelFoodPulseCheckoutRiskRepository();
+    _loadCheckoutRisk();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final risk = RiskInfo.fromScore(MockFoodPulseData.checkoutRiskScore);
+    final risk = _displayRisk;
     final total = MockFoodPulseData.totalFor(MockFoodPulseData.defaultCart);
 
     return Scaffold(
@@ -46,11 +79,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              const Text(
                                 'Fulfillment Risk Score',
                                 style: TextStyle(
                                   color: AppColors.white,
@@ -58,7 +91,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
-                              SizedBox(height: 3),
+                              const SizedBox(height: 3),
                               Text(
                                 'Logistic Regression · Real-time Prediction.',
                                 style: TextStyle(
@@ -70,10 +103,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        RiskChip(risk: risk, dense: true),
+                        _isRiskLoading
+                            ? const _RiskLoadingPill()
+                            : RiskChip(risk: risk, dense: true),
                       ],
                     ),
-                    Center(child: RiskGauge(risk: risk)),
+                    Center(
+                      child: _isRiskLoading
+                          ? const _RiskLoadingGauge()
+                          : RiskGauge(risk: risk),
+                    ),
                     const Wrap(
                       spacing: 6,
                       runSpacing: 6,
@@ -103,10 +142,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               AppCard(
                 color: AppColors.tangerine.withAlpha(24),
                 borderColor: AppColors.tangerine.withAlpha(52),
-                child: const Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'FoodPulse Risk Advisories',
                       style: TextStyle(
                         color: AppColors.tangerine,
@@ -114,19 +153,31 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     _AdvisoryLine(
+                      icon: _riskAdvisoryIcon,
+                      text: _primaryRiskAdvisory,
+                    ),
+                    const SizedBox(height: 8),
+                    if (_secondaryRiskAdvisory != null) ...[
+                      _AdvisoryLine(
+                        icon: Icons.sync_alt_rounded,
+                        text: _secondaryRiskAdvisory!,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    const _AdvisoryLine(
                       icon: Icons.schedule_rounded,
                       text:
                           'Adjusted ETA: 30–45 min due to high rider pressure',
                     ),
-                    SizedBox(height: 8),
-                    _AdvisoryLine(
+                    const SizedBox(height: 8),
+                    const _AdvisoryLine(
                       icon: Icons.account_balance_wallet_rounded,
                       text: 'Prepayment recommended to secure your order slot',
                     ),
-                    SizedBox(height: 8),
-                    _AdvisoryLine(
+                    const SizedBox(height: 8),
+                    const _AdvisoryLine(
                       icon: Icons.notifications_active_outlined,
                       text: 'Merchant alerted to begin preparation immediately',
                     ),
@@ -252,6 +303,110 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
     );
   }
+
+  RiskInfo get _displayRisk {
+    final prediction = _riskPrediction;
+    if (prediction == null) {
+      return RiskInfo.unknown;
+    }
+
+    final rawLevel = prediction.riskLevel.trim();
+    final label = rawLevel.isEmpty
+        ? RiskColorMapper.labelForScore(prediction.riskPercent)
+        : rawLevel;
+
+    return RiskInfo(
+      score: prediction.riskPercent,
+      label: label,
+      color: RiskColorMapper.colorFor(label),
+    );
+  }
+
+  IconData get _riskAdvisoryIcon {
+    if (_riskErrorMessage != null) {
+      return Icons.info_outline_rounded;
+    }
+    if (_isRiskLoading) {
+      return Icons.hourglass_top_rounded;
+    }
+    if (_isLaravelFallback(_riskPrediction)) {
+      return Icons.warning_amber_rounded;
+    }
+    return Icons.insights_rounded;
+  }
+
+  String get _primaryRiskAdvisory {
+    if (_isRiskLoading) {
+      return 'Calculating fulfillment risk through Laravel before checkout.';
+    }
+    if (_riskErrorMessage != null) {
+      return 'Risk prediction is unavailable right now. You can still place your order.';
+    }
+
+    final prediction = _riskPrediction;
+    if (_isLaravelFallback(prediction)) {
+      return 'Fallback risk mode active. You can still place your order.';
+    }
+
+    return prediction?.recommendation ??
+        'Risk prediction is unavailable right now. You can still place your order.';
+  }
+
+  String? get _secondaryRiskAdvisory {
+    final errorMessage = _riskErrorMessage;
+    if (errorMessage != null) {
+      return errorMessage;
+    }
+
+    final prediction = _riskPrediction;
+    if (prediction == null) {
+      return null;
+    }
+
+    return 'Risk source: ${prediction.source}';
+  }
+
+  Future<void> _loadCheckoutRisk() async {
+    try {
+      final prediction = await _checkoutRiskRepository.predictRisk(
+        _checkoutRiskRequest,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _riskPrediction = prediction;
+        _riskErrorMessage = null;
+        _isRiskLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _riskPrediction = null;
+        _riskErrorMessage = _friendlyRiskError(error);
+        _isRiskLoading = false;
+      });
+    }
+  }
+
+  String _friendlyRiskError(Object error) {
+    if (error is ApiException) {
+      return error.message;
+    }
+
+    return 'Check the Laravel API connection and try again later.';
+  }
+
+  bool _isLaravelFallback(RiskPredictionResponse? prediction) {
+    if (prediction == null) {
+      return false;
+    }
+
+    return prediction.source.toLowerCase() == 'laravel-fallback' ||
+        prediction.riskLevel.toLowerCase() == 'unknown';
+  }
 }
 
 class _Header extends StatelessWidget {
@@ -300,6 +455,59 @@ class _SectionTitle extends StatelessWidget {
         color: AppColors.white,
         fontSize: 13,
         fontWeight: FontWeight.w900,
+      ),
+    );
+  }
+}
+
+class _RiskLoadingPill extends StatelessWidget {
+  const _RiskLoadingPill();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.silver.withAlpha(24),
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: AppColors.silver.withAlpha(70)),
+      ),
+      child: const SizedBox(
+        width: 14,
+        height: 14,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.silver,
+        ),
+      ),
+    );
+  }
+}
+
+class _RiskLoadingGauge extends StatelessWidget {
+  const _RiskLoadingGauge();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 220,
+      height: 124,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(strokeWidth: 3, color: AppColors.orange),
+            SizedBox(height: 10),
+            Text(
+              'Calculating risk',
+              style: TextStyle(
+                color: AppColors.silver,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

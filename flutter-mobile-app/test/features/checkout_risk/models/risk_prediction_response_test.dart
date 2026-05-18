@@ -34,4 +34,20 @@ void main() {
     expect(response.riskLevel, 'Unknown');
     expect(response.recommendation, 'No recommendation was returned.');
   });
+
+  test('normalizes fractional and whole-number risk scores to percentages', () {
+    final fractionalResponse = RiskPredictionResponse.fromJson({
+      'success': true,
+      'source': 'ml-service',
+      'data': {'risk_score': 0.72, 'risk_level': 'High'},
+    });
+    final wholeNumberResponse = RiskPredictionResponse.fromJson({
+      'success': true,
+      'source': 'ml-service',
+      'data': {'risk_score': 72, 'risk_level': 'High'},
+    });
+
+    expect(fractionalResponse.riskPercent, 72);
+    expect(wholeNumberResponse.riskPercent, 72);
+  });
 }

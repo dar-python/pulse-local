@@ -33,16 +33,15 @@ class CheckoutRiskRequest extends FormRequest
     }
 
     public function rules(): array
-        {
-            return [
-                'rider_to_order_ratio' => ['required', 'numeric', 'min:0', 'max:10'],
-                'merchant_prep_time' => ['required', 'integer', 'min:0', 'max:240'],
-
-                'traffic_corridor_intensity' => ['required', 'string', 'in:low,medium,high'],
-                'weather_category' => ['required', 'string', 'in:clear,rainy,stormy'],
-                'delivery_distance_km' => ['required', 'numeric', 'min:0', 'max:100'],
-                'address_complexity' => ['required', 'string', 'in:low,medium,high'],
-                'payment_method' => ['required', 'string', 'in:cod,cash,gcash,card'],
-            ];
-        }
+    {
+        return [
+            'rider_to_order_ratio' => ['required', 'numeric', 'min:0'],
+            'merchant_prep_time' => ['required', 'integer', 'min:1'],
+            'traffic_corridor_intensity' => ['required', 'string', 'in:low,medium,high'],
+            'weather_category' => ['required', 'string', 'in:clear,rainy,stormy'],
+            'delivery_distance_km' => ['required', 'numeric', 'min:0'],
+            'address_complexity' => ['required', 'string', 'in:low,medium,high'],
+            'payment_method' => ['required', 'string', 'in:cod,cash,gcash,card'],
+        ];
+    }
 }

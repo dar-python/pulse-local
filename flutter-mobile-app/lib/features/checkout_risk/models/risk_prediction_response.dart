@@ -15,6 +15,11 @@ class RiskPredictionResponse {
   final String riskLevel;
   final String recommendation;
 
+  int get riskPercent {
+    final percent = riskScore <= 1 ? riskScore * 100 : riskScore;
+    return percent.round().clamp(0, 100).toInt();
+  }
+
   factory RiskPredictionResponse.fromJson(Map<String, dynamic> json) {
     final data = json['data'];
     if (data is! Map<String, dynamic>) {

@@ -274,7 +274,7 @@ class _RiskPredictionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = RiskColorMapper.colorFor(prediction.riskLevel);
-    final riskPercent = (prediction.riskScore * 100).round();
+    final riskPercent = prediction.riskPercent;
 
     return Card(
       margin: EdgeInsets.zero,

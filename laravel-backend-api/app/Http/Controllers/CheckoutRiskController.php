@@ -27,9 +27,10 @@ class CheckoutRiskController extends Controller
                 'exception_message' => $e->getMessage(),
                 'ml_service_url' => $mlServiceUrl,
                 'prediction_url' => $predictionUrl,
+                'feature_keys' => array_keys($request->validated()),
             ]);
 
-            $payload = [
+            return response()->json([
                 'success' => true,
                 'source' => (string) config('services.checkout_risk.fallback_source'),
                 'data' => [
@@ -37,18 +38,7 @@ class CheckoutRiskController extends Controller
                     'risk_level' => (string) config('services.checkout_risk.fallback_level'),
                     'recommendation' => (string) config('services.checkout_risk.fallback_recommendation'),
                 ],
-            ];
-
-            if (config('app.debug')) {
-                $payload['debug'] = [
-                    'exception' => $e::class,
-                    'message' => $e->getMessage(),
-                    'ml_service_url' => $mlServiceUrl,
-                    'prediction_url' => $predictionUrl,
-                ];
-            }
-
-            return response()->json($payload);
+            ]);
         }
     }
 }

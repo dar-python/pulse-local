@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../checkout/checkout_screen.dart';
+import '../checkout/repositories/foodpulse_checkout_risk_repository.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -138,7 +139,10 @@ class CartScreen extends StatelessWidget {
                 label: 'Proceed to Checkout →',
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => const CheckoutScreen(),
+                    builder: (_) => CheckoutScreen(
+                      checkoutRiskRepository:
+                          FoodPulseCheckoutRiskScope.maybeOf(context),
+                    ),
                   ),
                 ),
               ),

@@ -1,6 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse_local_app/app/foodpulse_app.dart';
+import 'package:pulse_local_app/features/checkout/repositories/foodpulse_checkout_risk_repository.dart';
+import 'package:pulse_local_app/features/checkout_risk/models/checkout_risk_request.dart';
+import 'package:pulse_local_app/features/checkout_risk/models/risk_prediction_response.dart';
 
 void main() {
   testWidgets('starts on local login and rejects non-demo credentials', (
@@ -21,7 +24,20 @@ void main() {
   });
 
   testWidgets('navigates the mock FoodPulse ordering flow', (tester) async {
-    await tester.pumpWidget(const FoodPulseApp());
+    await tester.pumpWidget(
+      FoodPulseCheckoutRiskScope(
+        repository: _StaticFoodPulseCheckoutRiskRepository(
+          const RiskPredictionResponse(
+            success: true,
+            source: 'ml-service',
+            riskScore: 0.68,
+            riskLevel: 'Medium',
+            recommendation: 'Medium fulfillment risk. Keep ETA visible.',
+          ),
+        ),
+        child: const FoodPulseApp(),
+      ),
+    );
 
     await tester.enterText(find.byKey(const Key('login_username')), 'user');
     await tester.enterText(find.byKey(const Key('login_password')), 'pass');
@@ -63,4 +79,18 @@ void main() {
     expect(find.text('Order #FP-2024-9873'), findsOneWidget);
     expect(find.text('68% · adjusting ETA'), findsOneWidget);
   });
+}
+
+class _StaticFoodPulseCheckoutRiskRepository
+    implements FoodPulseCheckoutRiskRepository {
+  const _StaticFoodPulseCheckoutRiskRepository(this.response);
+
+  final RiskPredictionResponse response;
+
+  @override
+  Future<RiskPredictionResponse> predictRisk(
+    CheckoutRiskRequest request,
+  ) async {
+    return response;
+  }
 }
