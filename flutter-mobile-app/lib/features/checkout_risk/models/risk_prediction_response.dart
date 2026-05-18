@@ -7,6 +7,7 @@ class RiskPredictionResponse {
     required this.riskScore,
     required this.riskLevel,
     required this.recommendation,
+    this.etaRange = '30-45 min',
   });
 
   final bool success;
@@ -14,6 +15,7 @@ class RiskPredictionResponse {
   final double riskScore;
   final String riskLevel;
   final String recommendation;
+  final String etaRange;
 
   int get riskPercent {
     final percent = riskScore <= 1 ? riskScore * 100 : riskScore;
@@ -39,6 +41,7 @@ class RiskPredictionResponse {
       recommendation:
           data['recommendation']?.toString() ??
           'No recommendation was returned.',
+      etaRange: data['eta_range']?.toString() ?? '30-45 min',
     );
   }
 
@@ -48,6 +51,7 @@ class RiskPredictionResponse {
       riskLevel: riskLevel,
       recommendation: recommendation,
       source: source,
+      etaRange: etaRange,
     );
   }
 }

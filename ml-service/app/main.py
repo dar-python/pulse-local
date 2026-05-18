@@ -8,7 +8,9 @@ from typing import Any, Literal
 import joblib
 import pandas as pd
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.config import settings
 
 
 @asynccontextmanager
@@ -26,7 +28,8 @@ app = FastAPI(
 
 
 MODEL_DIR = Path(__file__).resolve().parent / "models"
-MODEL_PATH = MODEL_DIR / "pulselocal_logistic_regression_model.joblib"
+CONFIGURED_MODEL_PATH = Path(settings.model_path)
+MODEL_PATH = CONFIGURED_MODEL_PATH if CONFIGURED_MODEL_PATH.is_absolute() else Path.cwd() / CONFIGURED_MODEL_PATH
 METADATA_PATH = MODEL_DIR / "pulselocal_model_metadata.json"
 
 MODEL_FEATURE_COLUMNS = [
@@ -48,25 +51,21 @@ RECOMMENDATIONS = {
 
 WeatherCategory = Literal["clear", "rainy", "stormy"]
 TrafficIntensity = Literal["low", "medium", "high"]
-AddressComplexity = Literal["low", "medium", "high"]
-PaymentMethod = Literal["cod", "cash", "gcash", "card"]
+TimeOfDay = Literal["morning", "afternoon", "evening", "night"]
+VehicleType = Literal["bicycle", "motorcycle"]
 RiskLevel = Literal["Low", "Medium", "High"]
 
 
 class PredictionRequest(BaseModel):
-    rider_to_order_ratio: float = Field(
-        ge=0.0,
-        description="Available riders divided by active orders",
-    )
-    merchant_prep_time: int = Field(
-        ge=0,
-        description="Merchant preparation time in minutes",
-    )
-    traffic_corridor_intensity: TrafficIntensity
-    weather_category: WeatherCategory
-    delivery_distance_km: float = Field(ge=0.0)
-    address_complexity: AddressComplexity
-    payment_method: PaymentMethod
+    model_config = ConfigDict(extra="forbid")
+
+    Distance_km: float = Field(ge=0.0)
+    Weather: WeatherCategory
+    Traffic_Level: TrafficIntensity
+    Time_of_Day: TimeOfDay
+    Vehicle_Type: VehicleType
+    Preparation_Time_min: int = Field(ge=0)
+    Courier_Experience_yrs: float = Field(ge=0.0)
 
 
 class PredictionResponse(BaseModel):
@@ -94,7 +93,7 @@ def health_check() -> dict[str, str]:
 
 @app.post("/predict", response_model=PredictionResponse)
 def predict_fulfillment_risk(payload: PredictionRequest) -> PredictionResponse:
-    input_df = adapt_public_request_to_model_input(payload)
+    input_df = model_input_frame(payload)
     risk_score = round(float(load_model().predict_proba(input_df)[0][1]), 2)
     risk_level = classify_risk_level(risk_score)
 
@@ -117,21 +116,31 @@ def load_metadata() -> dict[str, Any]:
         return json.load(metadata_file)
 
 
-def adapt_public_request_to_model_input(payload: PredictionRequest) -> pd.DataFrame:
+def model_input_frame(payload: PredictionRequest) -> pd.DataFrame:
     model_row = {
-        "Distance_km": payload.delivery_distance_km,
-        "Weather": payload.weather_category,
-        "Traffic_Level": payload.traffic_corridor_intensity,
-        # Sprint 1 MVP temporary default until the app collects this field or the
-        # model is retrained with app-aligned features.
-        "Time_of_Day": "evening",
-        # Sprint 1 MVP temporary default until the app collects this field or the
-        # model is retrained with app-aligned features.
-        "Vehicle_Type": "motorcycle",
-        "Preparation_Time_min": payload.merchant_prep_time,
-        # Sprint 1 MVP temporary default until the app collects this field or the
-        # model is retrained with app-aligned features.
-        "Courier_Experience_yrs": 1.0,
+        "Distance_km": payload.Distance_km,
+        "Weather": {
+            "clear": "Clear",
+            "rainy": "Rainy",
+            "stormy": "Rainy",
+        }[payload.Weather],
+        "Traffic_Level": {
+            "low": "Low",
+            "medium": "Medium",
+            "high": "High",
+        }[payload.Traffic_Level],
+        "Time_of_Day": {
+            "morning": "Morning",
+            "afternoon": "Afternoon",
+            "evening": "Evening",
+            "night": "Night",
+        }[payload.Time_of_Day],
+        "Vehicle_Type": {
+            "bicycle": "Bike",
+            "motorcycle": "Scooter",
+        }[payload.Vehicle_Type],
+        "Preparation_Time_min": payload.Preparation_Time_min,
+        "Courier_Experience_yrs": payload.Courier_Experience_yrs,
     }
 
     return pd.DataFrame([model_row], columns=MODEL_FEATURE_COLUMNS)

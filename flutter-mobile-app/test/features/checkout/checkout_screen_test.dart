@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse_local_app/core/data/mock_foodpulse_data.dart';
+import 'package:pulse_local_app/core/models/cart_item.dart';
 import 'package:pulse_local_app/core/models/restaurant.dart';
 import 'package:pulse_local_app/core/network/api_exception.dart';
 import 'package:pulse_local_app/features/checkout/checkout_screen.dart';
@@ -13,7 +14,7 @@ import 'package:pulse_local_app/features/foodpulse/models/foodpulse_order.dart';
 import 'package:pulse_local_app/features/foodpulse/repositories/foodpulse_repository.dart';
 
 void main() {
-  testWidgets('loads the Laravel prediction and displays medium risk', (
+  testWidgets('loads the Laravel prediction with current checkout context', (
     tester,
   ) async {
     final completer = Completer<RiskPredictionResponse>();
@@ -24,6 +25,16 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: CheckoutScreen(
+          key: const ValueKey('jollibee-checkout'),
+          restaurant: MockFoodPulseData.restaurants[1],
+          items: const [
+            CartItem(item: MockFoodPulseData.chickenjoyMeal, quantity: 1),
+          ],
+          deliveryAddress: FoodPulseDeliveryAddress(
+            label: 'Tacloban City',
+            notes: 'Near downtown',
+          ),
+          initialPaymentMethod: 'gcash',
           checkoutRiskRepository: repository,
           foodPulseRepository: const _StaticFoodPulseRepository(),
         ),
@@ -40,18 +51,27 @@ void main() {
         riskScore: 0.68,
         riskLevel: 'Medium',
         recommendation: 'Medium fulfillment risk. Keep ETA visible.',
+        etaRange: '30-40 min',
       ),
     );
     await tester.pumpAndSettle();
 
     expect(repository.requests.single.toJson(), {
-      'rider_to_order_ratio': 0.45,
-      'merchant_prep_time': 25,
-      'traffic_corridor_intensity': 'high',
-      'weather_category': 'rainy',
-      'delivery_distance_km': 4.2,
-      'address_complexity': 'medium',
-      'payment_method': 'cod',
+      'restaurant_id': 2,
+      'restaurant_slug': 'jollibee-express',
+      'items': [
+        {
+          'id': 6,
+          'name': 'Chickenjoy Meal',
+          'category': 'Bestsellers',
+          'quantity': 1,
+          'unit_price': 149,
+        },
+      ],
+      'delivery_address': {'label': 'Tacloban City', 'notes': 'Near downtown'},
+      'payment_method': 'gcash',
+      'subtotal': 149,
+      'total_quantity': 1,
     });
     expect(find.text('68%'), findsOneWidget);
     expect(find.text('MEDIUM RISK'), findsWidgets);
@@ -72,6 +92,7 @@ void main() {
         riskLevel: 'High',
         recommendation:
             'High fulfillment risk. Adjust ETA and notify merchant.',
+        etaRange: '40-55 min',
       ),
     );
 
@@ -103,6 +124,7 @@ void main() {
         riskScore: 0.50,
         riskLevel: 'Unknown',
         recommendation: 'Standard checkout allowed. Risk service unavailable.',
+        etaRange: '30-45 min',
       ),
     );
 
@@ -123,6 +145,63 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining('laravel-fallback'), findsOneWidget);
+  });
+
+  testWidgets('different restaurant carts trigger different risk payloads', (
+    tester,
+  ) async {
+    final repository = _FakeFoodPulseCheckoutRiskRepository(
+      onPredictRisk: (_) async => const RiskPredictionResponse(
+        success: true,
+        source: 'ml-service',
+        riskScore: 0.30,
+        riskLevel: 'Low',
+        recommendation: 'Low fulfillment risk. Proceed with normal checkout.',
+        etaRange: '20-30 min',
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CheckoutScreen(
+          restaurant: MockFoodPulseData.restaurants[1],
+          items: const [
+            CartItem(item: MockFoodPulseData.chickenjoyMeal, quantity: 1),
+          ],
+          checkoutRiskRepository: repository,
+          foodPulseRepository: const _StaticFoodPulseRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CheckoutScreen(
+          key: const ValueKey('chao-fan-checkout'),
+          restaurant: MockFoodPulseData.restaurants[2],
+          items: const [
+            CartItem(item: MockFoodPulseData.porkChaoFan, quantity: 2),
+            CartItem(item: MockFoodPulseData.siomai, quantity: 2),
+          ],
+          deliveryAddress: FoodPulseDeliveryAddress(
+            label: 'V&G Subdivision Extension',
+          ),
+          checkoutRiskRepository: repository,
+          foodPulseRepository: const _StaticFoodPulseRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.requests, hasLength(2));
+    expect(
+      repository.requests[0].toJson(),
+      isNot(repository.requests[1].toJson()),
+    );
+    expect(repository.requests[0].toJson()['restaurant_id'], 2);
+    expect(repository.requests[1].toJson()['restaurant_id'], 3);
+    expect(repository.requests[1].toJson()['total_quantity'], 4);
   });
 
   testWidgets('keeps checkout confirmation available when the API fails', (
@@ -160,6 +239,41 @@ void main() {
 
     expect(find.text('Order Confirmed!'), findsOneWidget);
   });
+
+  testWidgets(
+    'confirmation keeps checkout risk and eta when confirmation eta is default',
+    (tester) async {
+      final repository = _FakeFoodPulseCheckoutRiskRepository(
+        onPredictRisk: (_) async => const RiskPredictionResponse(
+          success: true,
+          source: 'ml-service',
+          riskScore: 0.68,
+          riskLevel: 'Medium',
+          recommendation: 'Medium fulfillment risk. Show realistic ETA.',
+          etaRange: '30-40 min',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: CheckoutScreen(
+            checkoutRiskRepository: repository,
+            foodPulseRepository: const _StaticFoodPulseRepository(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final placeOrderButton = find.textContaining('Place Order');
+      await tester.ensureVisible(placeOrderButton);
+      await tester.tap(placeOrderButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Order Confirmed!'), findsOneWidget);
+      expect(find.text('Est. Arrival: 30-40 min'), findsOneWidget);
+      expect(find.text('68% - adjusting ETA'), findsOneWidget);
+    },
+  );
 }
 
 class _StaticFoodPulseRepository implements FoodPulseRepository {

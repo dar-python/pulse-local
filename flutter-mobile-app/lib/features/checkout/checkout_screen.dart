@@ -47,15 +47,6 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  static const _checkoutRiskRequest = CheckoutRiskRequest(
-    riderToOrderRatio: 0.45,
-    merchantPrepTime: 25,
-    trafficCorridorIntensity: 'high',
-    weatherCategory: 'rainy',
-    deliveryDistanceKm: 4.2,
-    addressComplexity: 'medium',
-    paymentMethod: 'cod',
-  );
   static const _defaultDeliveryAddress = FoodPulseDeliveryAddress(
     label: 'Marasbaras, Tacloban City',
     notes: 'Zone 7 · Leyte, Philippines',
@@ -216,10 +207,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       ),
                       const SizedBox(height: 8),
                     ],
-                    const _AdvisoryLine(
+                    _AdvisoryLine(
                       icon: Icons.schedule_rounded,
-                      text:
-                          'Adjusted ETA: 30–45 min due to high rider pressure',
+                      text: _etaAdvisory,
                     ),
                     const SizedBox(height: 8),
                     const _AdvisoryLine(
@@ -292,21 +282,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 icon: Icons.account_balance_wallet_rounded,
                 selected: _paymentMethod == 'gcash',
                 suggested: true,
-                onTap: () => setState(() => _paymentMethod = 'gcash'),
+                onTap: () => _selectPaymentMethod('gcash'),
               ),
               const SizedBox(height: 7),
               PaymentTile(
                 label: 'Cash on Delivery',
                 icon: Icons.payments_rounded,
                 selected: _paymentMethod == 'cod',
-                onTap: () => setState(() => _paymentMethod = 'cod'),
+                onTap: () => _selectPaymentMethod('cod'),
               ),
               const SizedBox(height: 7),
               PaymentTile(
                 label: 'Credit / Debit Card',
                 icon: Icons.credit_card_rounded,
                 selected: _paymentMethod == 'card',
-                onTap: () => setState(() => _paymentMethod = 'card'),
+                onTap: () => _selectPaymentMethod('card'),
               ),
               const SizedBox(height: 14),
               AppCard(
@@ -446,6 +436,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return 'Risk source: ${prediction.source}';
   }
 
+  String get _etaAdvisory {
+    if (_isRiskLoading) {
+      return 'ETA updates after Laravel finishes the checkout risk prediction.';
+    }
+
+    final etaRange = _etaRangeFromPrediction(_riskPrediction);
+    if (etaRange == null) {
+      return 'Adjusted ETA: 30-45 min while prediction is unavailable.';
+    }
+
+    return 'Adjusted ETA: $etaRange based on the current checkout risk.';
+  }
+
+  void _selectPaymentMethod(String paymentMethod) {
+    if (_paymentMethod == paymentMethod) {
+      return;
+    }
+
+    setState(() => _paymentMethod = paymentMethod);
+    _loadCheckoutRisk();
+  }
+
   Future<void> _placeOrder() async {
     if (_isSubmittingOrder) {
       return;
@@ -500,14 +512,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             );
       final checkoutOrderRisk =
           _orderRiskFromPrediction(_riskPrediction) ?? checkoutResult.data.risk;
+      final checkoutEta =
+          _etaRangeFromPrediction(_riskPrediction) ??
+          OrderConfirmation.fromCheckout(checkoutResult.data).estimatedArrival;
       final checkoutConfirmation = OrderConfirmation.fromCheckout(
         checkoutResult.data,
-      ).copyWith(risk: checkoutOrderRisk);
+      ).copyWith(risk: checkoutOrderRisk, estimatedArrival: checkoutEta);
       final orderConfirmation = rawConfirmationResult.usedFallback
           ? checkoutConfirmation
           : checkoutConfirmation.copyWith(
               status: rawConfirmationResult.data.status,
-              estimatedArrival: rawConfirmationResult.data.estimatedArrival,
+              estimatedArrival: _newerConfirmationEta(
+                rawConfirmationResult.data.estimatedArrival,
+                checkoutConfirmation.estimatedArrival,
+              ),
               trackingSteps: rawConfirmationResult.data.trackingSteps.isEmpty
                   ? checkoutConfirmation.trackingSteps
                   : rawConfirmationResult.data.trackingSteps,
@@ -537,6 +555,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       );
       final fallbackRisk =
           _orderRiskFromPrediction(_riskPrediction) ?? fallbackCheckout.risk;
+      final fallbackConfirmation = OrderConfirmation.fromCheckout(
+        fallbackCheckout,
+      );
+      final fallbackEta =
+          _etaRangeFromPrediction(_riskPrediction) ??
+          fallbackConfirmation.estimatedArrival;
       const message =
           'Laravel order checkout is unavailable. Using saved local checkout data so the demo can continue.';
 
@@ -552,9 +576,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => ConfirmedScreen(
-            orderConfirmation: OrderConfirmation.fromCheckout(
-              fallbackCheckout,
-            ).copyWith(risk: fallbackRisk),
+            orderConfirmation: fallbackConfirmation.copyWith(
+              risk: fallbackRisk,
+              estimatedArrival: fallbackEta,
+            ),
             fallbackMessage: message,
           ),
         ),
@@ -690,9 +715,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _loadCheckoutRisk() async {
+    setState(() {
+      _isRiskLoading = true;
+      _riskErrorMessage = null;
+    });
+
     try {
       final prediction = await _checkoutRiskRepository.predictRisk(
-        _checkoutRiskRequest,
+        _checkoutRiskRequest(),
       );
       if (!mounted) {
         return;
@@ -714,6 +744,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  CheckoutRiskRequest _checkoutRiskRequest() {
+    return CheckoutRiskRequest.fromCheckoutContext(
+      restaurant: _restaurant,
+      items: _items,
+      deliveryAddress: _deliveryAddress,
+      paymentMethod: _paymentMethod ?? 'cod',
+    );
+  }
+
   String _friendlyRiskError(Object error) {
     if (error is ApiException) {
       return error.message;
@@ -729,6 +768,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     return prediction.source.toLowerCase() == 'laravel-fallback' ||
         prediction.riskLevel.toLowerCase() == 'unknown';
+  }
+
+  String? _etaRangeFromPrediction(RiskPredictionResponse? prediction) {
+    if (prediction == null) {
+      return null;
+    }
+
+    final etaRange = prediction.etaRange.trim();
+    return etaRange.isEmpty ? null : etaRange;
+  }
+
+  String _newerConfirmationEta(String confirmationEta, String checkoutEta) {
+    final normalizedEta = confirmationEta.trim();
+    if (normalizedEta.isEmpty ||
+        normalizedEta == '30-45 min' ||
+        normalizedEta == '30–45 min') {
+      return checkoutEta;
+    }
+
+    return normalizedEta;
   }
 
   FoodPulseOrderRisk? _orderRiskFromPrediction(

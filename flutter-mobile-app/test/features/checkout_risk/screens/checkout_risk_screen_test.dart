@@ -31,7 +31,7 @@ void main() {
       const RiskPredictionResponse(
         success: true,
         source: 'ml-service',
-        riskScore: 0.71,
+        riskScore: 0.72,
         riskLevel: 'High',
         recommendation:
             'High fulfillment risk. Adjust ETA and notify merchant.',
@@ -40,7 +40,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.text('Risk Score: 71%'), findsOneWidget);
+    expect(find.text('Risk Score: 72%'), findsOneWidget);
     expect(find.text('Risk Level: High'), findsOneWidget);
     expect(
       find.text('High fulfillment risk. Adjust ETA and notify merchant.'),
@@ -54,7 +54,9 @@ void main() {
   ) async {
     final service = _FakeCheckoutRiskApiService(
       onPredictRisk: (_) async {
-        throw const ApiException('Laravel checkout risk API cannot be reached.');
+        throw const ApiException(
+          'Laravel checkout risk API cannot be reached.',
+        );
       },
     );
 

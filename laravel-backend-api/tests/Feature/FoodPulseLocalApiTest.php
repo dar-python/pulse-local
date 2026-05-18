@@ -59,6 +59,27 @@ class FoodPulseLocalApiTest extends TestCase
             ]);
     }
 
+    public function test_restaurant_menu_endpoint_returns_jollibee_and_chao_fan_items(): void
+    {
+        $this->getJson('/api/restaurants/2/menu')
+            ->assertOk()
+            ->assertJsonPath('data.restaurant.name', 'Jollibee Express')
+            ->assertJsonFragment([
+                'id' => 6,
+                'name' => 'Chickenjoy Meal',
+                'category' => 'Bestsellers',
+            ]);
+
+        $this->getJson('/api/restaurants/3/menu')
+            ->assertOk()
+            ->assertJsonPath('data.restaurant.name', 'Chao Fan House')
+            ->assertJsonFragment([
+                'id' => 11,
+                'name' => 'Pork Chao Fan',
+                'category' => 'Bestsellers',
+            ]);
+    }
+
     public function test_restaurant_menu_endpoint_returns_not_found_for_unknown_restaurant(): void
     {
         $response = $this->getJson('/api/restaurants/999/menu');
@@ -110,6 +131,32 @@ class FoodPulseLocalApiTest extends TestCase
                     ],
                 ],
             ]);
+    }
+
+    public function test_cart_checkout_endpoint_accepts_jollibee_and_chao_fan_orders(): void
+    {
+        $this->postJson('/api/cart/checkout', [
+            ...$this->checkoutPayload(),
+            'restaurant_id' => 2,
+            'items' => [
+                ['menu_item_id' => 6, 'quantity' => 1],
+            ],
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.restaurant.name', 'Jollibee Express')
+            ->assertJsonPath('data.items.0.name', 'Chickenjoy Meal');
+
+        $this->postJson('/api/cart/checkout', [
+            ...$this->checkoutPayload(),
+            'restaurant_id' => 3,
+            'items' => [
+                ['menu_item_id' => 11, 'quantity' => 2],
+                ['menu_item_id' => 13, 'quantity' => 2],
+            ],
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.restaurant.name', 'Chao Fan House')
+            ->assertJsonPath('data.items.0.name', 'Pork Chao Fan');
     }
 
     public function test_cart_checkout_endpoint_validates_cart_payload(): void

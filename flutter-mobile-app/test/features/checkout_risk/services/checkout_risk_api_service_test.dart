@@ -14,10 +14,11 @@ void main() {
         'success': true,
         'source': 'ml-service',
         'data': {
-          'risk_score': 0.71,
+          'risk_score': 0.72,
           'risk_level': 'High',
           'recommendation':
               'High fulfillment risk. Adjust ETA and notify merchant.',
+          'eta_range': '40-55 min',
         },
       },
     );
@@ -27,13 +28,24 @@ void main() {
 
     final response = await service.predictRisk(
       const CheckoutRiskRequest(
-        riderToOrderRatio: 0.45,
-        merchantPrepTime: 25,
-        trafficCorridorIntensity: 'high',
-        weatherCategory: 'rainy',
-        deliveryDistanceKm: 4.2,
-        addressComplexity: 'medium',
+        restaurantId: 1,
+        restaurantSlug: 'tambayan-grill',
+        items: [
+          CheckoutRiskCartItem(
+            id: 1,
+            name: 'Pork Sinigang',
+            category: 'Bestsellers',
+            quantity: 1,
+            unitPrice: 185,
+          ),
+        ],
+        deliveryAddress: CheckoutRiskDeliveryAddress(
+          label: 'Marasbaras, Tacloban City',
+          notes: 'Zone 7',
+        ),
         paymentMethod: 'cod',
+        subtotal: 185,
+        totalQuantity: 1,
       ),
     );
 
@@ -41,16 +53,28 @@ void main() {
     expect(adapter.requestOptions?.baseUrl, 'http://127.0.0.1:8000');
     expect(adapter.requestOptions?.path, '/api/checkout/risk');
     expect(adapter.requestOptions?.data, {
-      'rider_to_order_ratio': 0.45,
-      'merchant_prep_time': 25,
-      'traffic_corridor_intensity': 'high',
-      'weather_category': 'rainy',
-      'delivery_distance_km': 4.2,
-      'address_complexity': 'medium',
+      'restaurant_id': 1,
+      'restaurant_slug': 'tambayan-grill',
+      'items': [
+        {
+          'id': 1,
+          'name': 'Pork Sinigang',
+          'category': 'Bestsellers',
+          'quantity': 1,
+          'unit_price': 185,
+        },
+      ],
+      'delivery_address': {
+        'label': 'Marasbaras, Tacloban City',
+        'notes': 'Zone 7',
+      },
       'payment_method': 'cod',
+      'subtotal': 185,
+      'total_quantity': 1,
     });
-    expect(response.riskScore, 0.71);
+    expect(response.riskScore, 0.72);
     expect(response.riskLevel, 'High');
+    expect(response.etaRange, '40-55 min');
     expect(response.source, 'ml-service');
   });
 }

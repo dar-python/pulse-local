@@ -44,14 +44,25 @@ Checkout-risk request:
 
 ```powershell
 $body = @{
-  rider_to_order_ratio = 0.45
-  merchant_prep_time = 25
-  traffic_corridor_intensity = 'high'
-  weather_category = 'rainy'
-  delivery_distance_km = 4.2
-  address_complexity = 'medium'
+  restaurant_id = 1
+  restaurant_slug = 'tambayan-grill'
+  items = @(
+    @{
+      id = 1
+      name = 'Pork Sinigang'
+      category = 'Bestsellers'
+      quantity = 1
+      unit_price = 185
+    }
+  )
+  delivery_address = @{
+    label = 'Marasbaras, Tacloban City'
+    notes = 'Zone 7, Leyte, Philippines'
+  }
   payment_method = 'cod'
-} | ConvertTo-Json
+  subtotal = 185
+  total_quantity = 1
+} | ConvertTo-Json -Depth 5
 
 Invoke-RestMethod -Uri http://127.0.0.1:8000/api/checkout/risk `
   -Method Post `

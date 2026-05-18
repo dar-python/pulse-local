@@ -42,13 +42,13 @@ python -m pytest
 curl -X POST "http://127.0.0.1:8001/predict" `
   -H "Content-Type: application/json" `
   -d '{
-    "rider_to_order_ratio": 0.45,
-    "merchant_prep_time": 25,
-    "traffic_corridor_intensity": "high",
-    "weather_category": "rainy",
-    "delivery_distance_km": 4.2,
-    "address_complexity": "medium",
-    "payment_method": "cod"
+    "Distance_km": 5.0,
+    "Weather": "rainy",
+    "Traffic_Level": "medium",
+    "Time_of_Day": "evening",
+    "Vehicle_Type": "motorcycle",
+    "Preparation_Time_min": 25,
+    "Courier_Experience_yrs": 2.0
   }'
 ```
 

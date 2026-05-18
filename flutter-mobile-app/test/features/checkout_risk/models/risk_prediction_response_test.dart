@@ -7,17 +7,19 @@ void main() {
       'success': true,
       'source': 'ml-service',
       'data': {
-        'risk_score': 0.71,
+        'risk_score': 0.72,
         'risk_level': 'High',
         'recommendation':
             'High fulfillment risk. Adjust ETA and notify merchant.',
+        'eta_range': '40-55 min',
       },
     });
 
     expect(response.success, isTrue);
     expect(response.source, 'ml-service');
-    expect(response.riskScore, 0.71);
+    expect(response.riskScore, 0.72);
     expect(response.riskLevel, 'High');
+    expect(response.etaRange, '40-55 min');
     expect(
       response.recommendation,
       'High fulfillment risk. Adjust ETA and notify merchant.',
@@ -33,6 +35,7 @@ void main() {
     expect(response.source, 'unknown');
     expect(response.riskLevel, 'Unknown');
     expect(response.recommendation, 'No recommendation was returned.');
+    expect(response.etaRange, '30-45 min');
   });
 
   test('normalizes fractional and whole-number risk scores to percentages', () {

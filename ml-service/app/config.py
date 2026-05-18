@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     app_port: int = 8001
     log_level: str = "debug"
 
-    mock_prediction_enabled: bool = True
+    mock_prediction_enabled: bool = False
     model_path: str = "./app/models/pulselocal_logistic_regression_model.joblib"
 
     risk_low_max: float = 0.39

@@ -16,27 +16,37 @@ POST /api/checkout/risk
 
 ### Purpose
 
-Receives checkout features from the mobile app and returns a fulfillment risk prediction.
+Receives the current checkout context from the mobile app and returns a
+fulfillment risk prediction. Flutter sends context only; Laravel builds the
+trained model feature row.
 
 ### Request Body
 
 ```json
 {
-  "rider_to_order_ratio": 0.45,
-  "merchant_prep_time": 25,
-  "traffic_corridor_intensity": "high",
-  "weather_category": "rainy",
-  "delivery_distance_km": 4.2,
-  "address_complexity": "medium",
-  "payment_method": "cod"
+  "restaurant_id": 1,
+  "restaurant_slug": "tambayan-grill",
+  "items": [
+    {
+      "id": 1,
+      "name": "Pork Sinigang",
+      "category": "Bestsellers",
+      "quantity": 1,
+      "unit_price": 185
+    }
+  ],
+  "delivery_address": {
+    "label": "Marasbaras, Tacloban City",
+    "notes": "Zone 7, Leyte, Philippines"
+  },
+  "payment_method": "cod",
+  "subtotal": 185,
+  "total_quantity": 1
 }
 ```
 
 Accepted enum values:
 
-- `traffic_corridor_intensity`: `low`, `medium`, `high`
-- `weather_category`: `clear`, `rainy`, `stormy`
-- `address_complexity`: `low`, `medium`, `high`
 - `payment_method`: `cod`, `cash`, `gcash`, `card`
 
 ### Laravel Response Body
@@ -48,7 +58,8 @@ Accepted enum values:
   "data": {
     "risk_score": 0.72,
     "risk_level": "High",
-    "recommendation": "High fulfillment risk. Adjust ETA and notify merchant."
+    "recommendation": "High fulfillment risk. Adjust ETA and notify merchant.",
+    "eta_range": "40-55 min"
   }
 }
 ```
@@ -63,7 +74,37 @@ the same wrapper and a fallback payload:
   "data": {
     "risk_score": 0.5,
     "risk_level": "Unknown",
-    "recommendation": "Prediction service unavailable. Proceed with standard checkout risk."
+    "recommendation": "Prediction service unavailable. Proceed with standard checkout risk.",
+    "eta_range": "30-45 min"
   }
 }
 ```
+
+## 2. Laravel -> Python ML Service
+
+### Endpoint
+
+POST /predict
+
+### Request Body
+
+Laravel sends the trained model feature schema:
+
+```json
+{
+  "Distance_km": 5.0,
+  "Weather": "rainy",
+  "Traffic_Level": "medium",
+  "Time_of_Day": "evening",
+  "Vehicle_Type": "motorcycle",
+  "Preparation_Time_min": 25,
+  "Courier_Experience_yrs": 2.0
+}
+```
+
+Accepted enum values:
+
+- `Weather`: `clear`, `rainy`, `stormy`
+- `Traffic_Level`: `low`, `medium`, `high`
+- `Time_of_Day`: `morning`, `afternoon`, `evening`, `night`
+- `Vehicle_Type`: `bicycle`, `motorcycle`
