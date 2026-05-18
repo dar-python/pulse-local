@@ -229,6 +229,36 @@ class OrderConfirmation {
     );
   }
 
+  OrderConfirmation copyWith({
+    String? orderNumber,
+    String? status,
+    String? estimatedArrival,
+    Restaurant? restaurant,
+    List<FoodPulseOrderItem>? items,
+    String? paymentMethod,
+    int? subtotal,
+    int? deliveryFee,
+    int? serviceCharge,
+    int? total,
+    FoodPulseOrderRisk? risk,
+    List<FoodPulseTrackingStep>? trackingSteps,
+  }) {
+    return OrderConfirmation(
+      orderNumber: orderNumber ?? this.orderNumber,
+      status: status ?? this.status,
+      estimatedArrival: estimatedArrival ?? this.estimatedArrival,
+      restaurant: restaurant ?? this.restaurant,
+      items: items ?? this.items,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      subtotal: subtotal ?? this.subtotal,
+      deliveryFee: deliveryFee ?? this.deliveryFee,
+      serviceCharge: serviceCharge ?? this.serviceCharge,
+      total: total ?? this.total,
+      risk: risk ?? this.risk,
+      trackingSteps: trackingSteps ?? this.trackingSteps,
+    );
+  }
+
   factory OrderConfirmation.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>? ?? json;
 

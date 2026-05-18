@@ -9,19 +9,29 @@ import '../../shared/widgets/primary_button.dart';
 import '../checkout/checkout_screen.dart';
 import '../checkout/repositories/foodpulse_checkout_risk_repository.dart';
 import '../foodpulse/repositories/foodpulse_repository.dart';
+import 'foodpulse_cart_controller.dart';
 
 class CartScreen extends StatelessWidget {
-  const CartScreen({super.key, Restaurant? restaurant, List<CartItem>? items})
-    : _restaurant = restaurant,
-      _items = items;
+  const CartScreen({
+    super.key,
+    Restaurant? restaurant,
+    List<CartItem>? items,
+    FoodPulseCartController? cartController,
+  }) : _restaurant = restaurant,
+       _items = items,
+       _cartController = cartController;
 
   final Restaurant? _restaurant;
   final List<CartItem>? _items;
+  final FoodPulseCartController? _cartController;
 
   @override
   Widget build(BuildContext context) {
-    final restaurant = _restaurant ?? MockFoodPulseData.restaurants.first;
-    final items = _items ?? MockFoodPulseData.defaultCart;
+    final restaurant =
+        _cartController?.restaurant ??
+        _restaurant ??
+        MockFoodPulseData.restaurants.first;
+    final items = _items ?? _cartController?.items ?? const <CartItem>[];
     final isCartEmpty = items.isEmpty;
     final subtotal = MockFoodPulseData.subtotalFor(items);
     final total = MockFoodPulseData.totalFor(items);

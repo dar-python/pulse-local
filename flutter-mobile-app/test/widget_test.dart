@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse_local_app/app/foodpulse_app.dart';
 import 'package:pulse_local_app/core/data/mock_foodpulse_data.dart';
@@ -63,12 +63,15 @@ void main() {
     );
     expect(find.text('Pork Sinigang'), findsOneWidget);
 
+    await tester.tap(find.byIcon(Icons.add_rounded).first);
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('View Cart'));
     await tester.pumpAndSettle();
 
     expect(find.text('My Cart'), findsOneWidget);
     expect(find.text('Total'), findsOneWidget);
-    expect(find.text('₱554'), findsWidgets);
+    expect(find.textContaining('244'), findsWidgets);
 
     await tester.tap(find.text('Proceed to Checkout →'));
     await tester.pumpAndSettle();
@@ -78,13 +81,13 @@ void main() {
     expect(find.text('MEDIUM RISK'), findsWidgets);
     expect(find.text('GCash'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Place Order · ₱554'));
-    await tester.tap(find.text('Place Order · ₱554'));
+    await tester.ensureVisible(find.textContaining('Place Order'));
+    await tester.tap(find.textContaining('Place Order'));
     await tester.pumpAndSettle();
 
     expect(find.text('Order Confirmed!'), findsOneWidget);
     expect(find.text('Order #FP-2024-9873'), findsOneWidget);
-    expect(find.text('68% · adjusting ETA'), findsOneWidget);
+    expect(find.text('68% - adjusting ETA'), findsOneWidget);
   });
 }
 

@@ -234,6 +234,98 @@ void main() {
     expect(find.text('Order Confirmed!'), findsOneWidget);
   });
 
+  testWidgets('high checkout risk remains high on confirmation', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrapped(
+        repository: _FakeFoodPulseRepository(
+          checkoutHandler: (_) async => FoodPulseResult.data(
+            _checkout(
+              'FP-HIGH-RISK',
+              risk: const FoodPulseOrderRisk(
+                score: 68,
+                level: 'Medium',
+                recommendation: 'Medium fulfillment risk. Keep ETA visible.',
+              ),
+            ),
+          ),
+          confirmationHandler: (_) async => FoodPulseResult.data(
+            _confirmation(
+              'FP-HIGH-RISK',
+              risk: const FoodPulseOrderRisk(
+                score: 68,
+                level: 'Medium',
+                recommendation: 'Medium fulfillment risk. Keep ETA visible.',
+              ),
+            ),
+          ),
+        ),
+        riskRepository: const _StaticRiskRepository.high(),
+        child: CheckoutScreen(
+          restaurant: MockFoodPulseData.restaurants.first,
+          items: MockFoodPulseData.defaultCart,
+          checkoutRiskRepository: const _StaticRiskRepository.high(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.textContaining('Place Order'));
+    await tester.tap(find.textContaining('Place Order'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue Order'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('82% - adjusting ETA'), findsOneWidget);
+    expect(find.text('HIGH RISK'), findsOneWidget);
+  });
+
+  testWidgets('medium checkout risk remains medium on confirmation', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrapped(
+        repository: _FakeFoodPulseRepository(
+          checkoutHandler: (_) async => FoodPulseResult.data(
+            _checkout(
+              'FP-MEDIUM-RISK',
+              risk: const FoodPulseOrderRisk(
+                score: 68,
+                level: 'Medium',
+                recommendation: 'Medium fulfillment risk. Keep ETA visible.',
+              ),
+            ),
+          ),
+          confirmationHandler: (_) async => FoodPulseResult.data(
+            _confirmation(
+              'FP-MEDIUM-RISK',
+              risk: const FoodPulseOrderRisk(
+                score: 68,
+                level: 'Medium',
+                recommendation: 'Medium fulfillment risk. Keep ETA visible.',
+              ),
+            ),
+          ),
+        ),
+        riskRepository: const _StaticRiskRepository.medium52(),
+        child: CheckoutScreen(
+          restaurant: MockFoodPulseData.restaurants.first,
+          items: MockFoodPulseData.defaultCart,
+          checkoutRiskRepository: const _StaticRiskRepository.medium52(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.textContaining('Place Order'));
+    await tester.tap(find.textContaining('Place Order'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('52% - adjusting ETA'), findsOneWidget);
+    expect(find.text('MEDIUM RISK'), findsOneWidget);
+  });
+
   testWidgets('fallback risk still allows checkout', (tester) async {
     final repository = _FakeFoodPulseRepository();
 
@@ -256,6 +348,8 @@ void main() {
 
     expect(repository.checkoutRequests, hasLength(1));
     expect(find.text('Order Confirmed!'), findsOneWidget);
+    expect(find.text('50% - adjusting ETA'), findsOneWidget);
+    expect(find.text('UNKNOWN RISK'), findsOneWidget);
   });
 
   testWidgets('place order cannot be double tapped while submitting', (
@@ -353,7 +447,14 @@ Widget _wrapped({
   );
 }
 
-CheckoutSummary _checkout(String orderNumber) {
+CheckoutSummary _checkout(
+  String orderNumber, {
+  FoodPulseOrderRisk risk = const FoodPulseOrderRisk(
+    score: 68,
+    level: 'Medium',
+    recommendation: 'Medium fulfillment risk. Keep ETA visible.',
+  ),
+}) {
   return CheckoutSummary(
     orderNumber: orderNumber,
     status: 'ready_for_confirmation',
@@ -372,15 +473,18 @@ CheckoutSummary _checkout(String orderNumber) {
     deliveryFee: 49,
     serviceCharge: 10,
     total: 244,
-    risk: const FoodPulseOrderRisk(
-      score: 68,
-      level: 'Medium',
-      recommendation: 'Medium fulfillment risk. Keep ETA visible.',
-    ),
+    risk: risk,
   );
 }
 
-OrderConfirmation _confirmation(String orderNumber) {
+OrderConfirmation _confirmation(
+  String orderNumber, {
+  FoodPulseOrderRisk risk = const FoodPulseOrderRisk(
+    score: 68,
+    level: 'Medium',
+    recommendation: 'Medium fulfillment risk. Keep ETA visible.',
+  ),
+}) {
   return OrderConfirmation(
     orderNumber: orderNumber,
     status: 'confirmed',
@@ -392,11 +496,7 @@ OrderConfirmation _confirmation(String orderNumber) {
     deliveryFee: 49,
     serviceCharge: 10,
     total: 244,
-    risk: const FoodPulseOrderRisk(
-      score: 68,
-      level: 'Medium',
-      recommendation: 'Medium fulfillment risk. Keep ETA visible.',
-    ),
+    risk: risk,
     trackingSteps: const [
       FoodPulseTrackingStep(label: 'Order placed', done: true),
     ],
@@ -471,6 +571,17 @@ class _StaticRiskRepository implements FoodPulseCheckoutRiskRepository {
           success: true,
           source: 'ml-service',
           riskScore: 0.68,
+          riskLevel: 'Medium',
+          recommendation: 'Medium fulfillment risk. Keep ETA visible.',
+        ),
+      );
+
+  const _StaticRiskRepository.medium52()
+    : this._(
+        const RiskPredictionResponse(
+          success: true,
+          source: 'ml-service',
+          riskScore: 0.52,
           riskLevel: 'Medium',
           recommendation: 'Medium fulfillment risk. Keep ETA visible.',
         ),

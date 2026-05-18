@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/data/mock_foodpulse_data.dart';
-import '../../core/models/cart_item.dart';
 import '../../core/models/menu_item.dart';
 import '../../core/models/restaurant.dart';
 import '../../core/models/risk_info.dart';
@@ -9,13 +8,19 @@ import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../cart/cart_screen.dart';
+import '../cart/foodpulse_cart_controller.dart';
 import '../foodpulse/repositories/foodpulse_repository.dart';
 
 class RestaurantScreen extends StatefulWidget {
-  const RestaurantScreen({super.key, Restaurant? restaurant})
-    : _restaurant = restaurant;
+  const RestaurantScreen({
+    super.key,
+    Restaurant? restaurant,
+    FoodPulseCartController? cartController,
+  }) : _restaurant = restaurant,
+       _cartController = cartController;
 
   final Restaurant? _restaurant;
+  final FoodPulseCartController? _cartController;
 
   @override
   State<RestaurantScreen> createState() => _RestaurantScreenState();
@@ -24,10 +29,11 @@ class RestaurantScreen extends StatefulWidget {
 class _RestaurantScreenState extends State<RestaurantScreen> {
   static const _defaultTabs = ['Bestsellers', 'Specials', 'Desserts'];
 
-  late final Map<int, int> _cart;
   late final Restaurant _restaurant;
+  late final FoodPulseCartController _cartController;
+  late final bool _ownsCartController;
   late FoodPulseRepository _repository;
-  List<MenuItem> _menuItems = MockFoodPulseData.menuItems;
+  List<MenuItem> _menuItems = const [];
   String _selectedTab = 'Bestsellers';
   bool _didLoadMenu = false;
   bool _isLoadingMenu = true;
@@ -37,10 +43,25 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
   void initState() {
     super.initState();
     _restaurant = widget._restaurant ?? MockFoodPulseData.restaurants.first;
-    _cart = {
-      for (final item in MockFoodPulseData.defaultCart)
-        item.item.id: item.quantity,
-    };
+    _menuItems = MockFoodPulseData.menuItemsFor(_restaurant.id);
+    _ownsCartController = widget._cartController == null;
+    _cartController = widget._cartController ?? FoodPulseCartController();
+    _cartController.addListener(_handleCartChanged);
+  }
+
+  @override
+  void dispose() {
+    _cartController.removeListener(_handleCartChanged);
+    if (_ownsCartController) {
+      _cartController.dispose();
+    }
+    super.dispose();
+  }
+
+  void _handleCartChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -57,23 +78,9 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
     _loadMenu();
   }
 
-  int get _cartCount => _cart.values.fold(0, (sum, quantity) => sum + quantity);
+  int get _cartCount => _cartController.quantityForRestaurant(_restaurant);
 
-  int get _cartTotal {
-    return _cart.entries.fold(0, (sum, entry) {
-      final item = _menuItemById(entry.key);
-      return sum + item.price * entry.value;
-    });
-  }
-
-  List<CartItem> get _cartItems {
-    return _cart.entries
-        .map(
-          (entry) =>
-              CartItem(item: _menuItemById(entry.key), quantity: entry.value),
-        )
-        .toList();
-  }
+  int get _cartTotal => _cartController.subtotalForRestaurant(_restaurant);
 
   Future<void> _loadMenu() async {
     try {
@@ -86,7 +93,6 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
         _menuItems = result.data.items;
         _menuMessage = result.usedFallback ? result.message : null;
         _isLoadingMenu = false;
-        _removeUnavailableCartItems();
 
         final tabs = _tabsFor(_menuItems);
         if (!tabs.contains(_selectedTab)) {
@@ -99,21 +105,16 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
       }
 
       setState(() {
-        _menuItems = MockFoodPulseData.menuItems;
+        _menuItems = MockFoodPulseData.menuItemsFor(_restaurant.id);
         _menuMessage = 'Using saved local menu data.';
         _isLoadingMenu = false;
-        _removeUnavailableCartItems();
       });
     }
   }
 
-  void _removeUnavailableCartItems() {
-    final menuItemIds = _menuItems.map((item) => item.id).toSet();
-    _cart.removeWhere((itemId, _) => !menuItemIds.contains(itemId));
-  }
-
   List<String> _tabsFor(List<MenuItem> items) {
     final categories = items
+        .where((item) => item.isAvailable)
         .map((item) => item.category)
         .where((category) => category.trim().isNotEmpty)
         .toSet()
@@ -122,23 +123,11 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
     return categories.isEmpty ? _defaultTabs : categories;
   }
 
-  MenuItem _menuItemById(int itemId) {
-    return _menuItems.firstWhere(
-      (item) => item.id == itemId,
-      orElse: () => MockFoodPulseData.menuItems.firstWhere(
-        (item) => item.id == itemId,
-        orElse: () => _menuItems.isNotEmpty
-            ? _menuItems.first
-            : MockFoodPulseData.menuItems.first,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final tabs = _tabsFor(_menuItems);
     final visibleItems = _menuItems
-        .where((item) => item.category == _selectedTab)
+        .where((item) => item.isAvailable && item.category == _selectedTab)
         .toList();
     final risk = RiskInfo.fromScore(_restaurant.riskScore);
 
@@ -263,12 +252,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                       ),
                       itemBuilder: (context, index) => _MenuItemRow(
                         item: visibleItems[index],
-                        onAdd: () {
-                          setState(() {
-                            _cart[visibleItems[index].id] =
-                                (_cart[visibleItems[index].id] ?? 0) + 1;
-                          });
-                        },
+                        onAdd: () => _addMenuItem(visibleItems[index]),
                       ),
                       separatorBuilder: (_, _) => Divider(
                         color: AppColors.white.withAlpha(14),
@@ -301,7 +285,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                     MaterialPageRoute<void>(
                       builder: (_) => CartScreen(
                         restaurant: _restaurant,
-                        items: _cartItems,
+                        cartController: _cartController,
                       ),
                     ),
                   ),
@@ -309,6 +293,77 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
               ),
             )
           : null,
+    );
+  }
+
+  Future<void> _addMenuItem(MenuItem item) async {
+    if (_cartController.hasDifferentRestaurant(_restaurant)) {
+      final shouldClear = await _showClearCartDialog();
+      if (shouldClear != true) {
+        return;
+      }
+
+      _cartController.addItem(
+        restaurant: _restaurant,
+        item: item,
+        clearExisting: true,
+      );
+      return;
+    }
+
+    _cartController.addItem(restaurant: _restaurant, item: item);
+  }
+
+  Future<bool?> _showClearCartDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.prussian,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: AppColors.orange.withAlpha(96)),
+          ),
+          title: const Text(
+            'Start a new order?',
+            style: TextStyle(
+              color: AppColors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: const Text(
+            'Starting a new order will clear your current cart.',
+            style: TextStyle(
+              color: AppColors.silver,
+              fontSize: 12,
+              height: 1.45,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: AppColors.silver,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                'Clear Cart and Add Item',
+                style: TextStyle(
+                  color: AppColors.orange,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -489,41 +544,44 @@ class _MenuTabs extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: Row(
-        children: [
-          for (final tab in tabs)
-            InkWell(
-              onTap: () => onChanged(tab),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (final tab in tabs)
+              InkWell(
+                onTap: () => onChanged(tab),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: selected == tab
+                            ? AppColors.orange
+                            : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    tab,
+                    style: TextStyle(
                       color: selected == tab
                           ? AppColors.orange
-                          : Colors.transparent,
-                      width: 2,
+                          : AppColors.silver,
+                      fontSize: 12,
+                      fontWeight: selected == tab
+                          ? FontWeight.w900
+                          : FontWeight.w600,
                     ),
                   ),
                 ),
-                child: Text(
-                  tab,
-                  style: TextStyle(
-                    color: selected == tab
-                        ? AppColors.orange
-                        : AppColors.silver,
-                    fontSize: 12,
-                    fontWeight: selected == tab
-                        ? FontWeight.w900
-                        : FontWeight.w600,
-                  ),
-                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

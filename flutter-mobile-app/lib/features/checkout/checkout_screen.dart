@@ -498,9 +498,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           : await repository.fetchOrderConfirmation(
               checkoutResult.data.orderNumber,
             );
+      final checkoutOrderRisk =
+          _orderRiskFromPrediction(_riskPrediction) ?? checkoutResult.data.risk;
+      final checkoutConfirmation = OrderConfirmation.fromCheckout(
+        checkoutResult.data,
+      ).copyWith(risk: checkoutOrderRisk);
       final orderConfirmation = rawConfirmationResult.usedFallback
-          ? OrderConfirmation.fromCheckout(checkoutResult.data)
-          : rawConfirmationResult.data;
+          ? checkoutConfirmation
+          : checkoutConfirmation.copyWith(
+              status: rawConfirmationResult.data.status,
+              estimatedArrival: rawConfirmationResult.data.estimatedArrival,
+              trackingSteps: rawConfirmationResult.data.trackingSteps.isEmpty
+                  ? checkoutConfirmation.trackingSteps
+                  : rawConfirmationResult.data.trackingSteps,
+            );
 
       if (!mounted) {
         return;
@@ -524,6 +535,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final fallbackCheckout = const FoodPulseFallbackRepository().checkout(
         request,
       );
+      final fallbackRisk =
+          _orderRiskFromPrediction(_riskPrediction) ?? fallbackCheckout.risk;
       const message =
           'Laravel order checkout is unavailable. Using saved local checkout data so the demo can continue.';
 
@@ -539,7 +552,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => ConfirmedScreen(
-            orderConfirmation: OrderConfirmation.fromCheckout(fallbackCheckout),
+            orderConfirmation: OrderConfirmation.fromCheckout(
+              fallbackCheckout,
+            ).copyWith(risk: fallbackRisk),
             fallbackMessage: message,
           ),
         ),
@@ -714,6 +729,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     return prediction.source.toLowerCase() == 'laravel-fallback' ||
         prediction.riskLevel.toLowerCase() == 'unknown';
+  }
+
+  FoodPulseOrderRisk? _orderRiskFromPrediction(
+    RiskPredictionResponse? prediction,
+  ) {
+    if (prediction == null) {
+      return null;
+    }
+
+    final rawLevel = prediction.riskLevel.trim();
+
+    return FoodPulseOrderRisk(
+      score: prediction.riskPercent,
+      level: rawLevel.isEmpty
+          ? RiskColorMapper.labelForScore(prediction.riskPercent)
+          : rawLevel,
+      recommendation: prediction.recommendation,
+    );
   }
 }
 

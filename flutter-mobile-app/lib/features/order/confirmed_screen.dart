@@ -215,7 +215,7 @@ class ConfirmedScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '${risk.score}% · adjusting ETA',
+                          '${risk.score}% - adjusting ETA',
                           style: TextStyle(
                             color: risk.color,
                             fontSize: 12,

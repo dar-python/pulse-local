@@ -9,11 +9,15 @@ import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/foodpulse_logo.dart';
 import '../../shared/widgets/risk_chip.dart';
 import '../cart/cart_screen.dart';
+import '../cart/foodpulse_cart_controller.dart';
 import '../foodpulse/repositories/foodpulse_repository.dart';
 import '../restaurant/restaurant_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, FoodPulseCartController? cartController})
+    : _cartController = cartController;
+
+  final FoodPulseCartController? _cartController;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -21,6 +25,23 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
+  late final FoodPulseCartController _cartController;
+  late final bool _ownsCartController;
+
+  @override
+  void initState() {
+    super.initState();
+    _ownsCartController = widget._cartController == null;
+    _cartController = widget._cartController ?? FoodPulseCartController();
+  }
+
+  @override
+  void dispose() {
+    if (_ownsCartController) {
+      _cartController.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,14 +52,20 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: IndexedStack(
               index: _navIndex,
-              children: const [
-                _HomeContent(),
-                _PlaceholderTab(title: 'Explore', icon: Icons.explore_rounded),
-                _PlaceholderTab(
+              children: [
+                _HomeContent(cartController: _cartController),
+                const _PlaceholderTab(
+                  title: 'Explore',
+                  icon: Icons.explore_rounded,
+                ),
+                const _PlaceholderTab(
                   title: 'Orders',
                   icon: Icons.receipt_long_rounded,
                 ),
-                _PlaceholderTab(title: 'Profile', icon: Icons.person_rounded),
+                const _PlaceholderTab(
+                  title: 'Profile',
+                  icon: Icons.person_rounded,
+                ),
               ],
             ),
           ),
@@ -53,7 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _HomeContent extends StatefulWidget {
-  const _HomeContent();
+  const _HomeContent({required this.cartController});
+
+  final FoodPulseCartController cartController;
 
   @override
   State<_HomeContent> createState() => _HomeContentState();
@@ -73,6 +102,24 @@ class _HomeContentState extends State<_HomeContent> {
   bool _isLoadingRestaurants = true;
   String? _restaurantMessage;
   late FoodPulseRepository _repository;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.cartController.addListener(_handleCartChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.cartController.removeListener(_handleCartChanged);
+    super.dispose();
+  }
+
+  void _handleCartChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -115,10 +162,7 @@ class _HomeContentState extends State<_HomeContent> {
 
   @override
   Widget build(BuildContext context) {
-    final cartCount = MockFoodPulseData.defaultCart.fold<int>(
-      0,
-      (sum, item) => sum + item.quantity,
-    );
+    final cartCount = widget.cartController.totalQuantity;
 
     final featuredRestaurant = _restaurants.isNotEmpty
         ? _restaurants.first
@@ -172,7 +216,11 @@ class _HomeContentState extends State<_HomeContent> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                _CartButton(count: cartCount, restaurant: featuredRestaurant),
+                _CartButton(
+                  count: cartCount,
+                  restaurant: featuredRestaurant,
+                  cartController: widget.cartController,
+                ),
               ],
             ),
             const SizedBox(height: 14),
@@ -181,8 +229,10 @@ class _HomeContentState extends State<_HomeContent> {
             _HeroBanner(
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) =>
-                      RestaurantScreen(restaurant: featuredRestaurant),
+                  builder: (_) => RestaurantScreen(
+                    restaurant: featuredRestaurant,
+                    cartController: widget.cartController,
+                  ),
                 ),
               ),
             ),
@@ -238,7 +288,10 @@ class _HomeContentState extends State<_HomeContent> {
             if (!_isLoadingRestaurants && _restaurants.isEmpty)
               const _EmptyRestaurantsState(),
             for (final restaurant in _restaurants) ...[
-              _RestaurantCard(restaurant: restaurant),
+              _RestaurantCard(
+                restaurant: restaurant,
+                cartController: widget.cartController,
+              ),
               const SizedBox(height: 10),
             ],
           ],
@@ -249,10 +302,15 @@ class _HomeContentState extends State<_HomeContent> {
 }
 
 class _CartButton extends StatelessWidget {
-  const _CartButton({required this.count, required this.restaurant});
+  const _CartButton({
+    required this.count,
+    required this.restaurant,
+    required this.cartController,
+  });
 
   final int count;
   final Restaurant restaurant;
+  final FoodPulseCartController cartController;
 
   @override
   Widget build(BuildContext context) {
@@ -260,7 +318,10 @@ class _CartButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => CartScreen(restaurant: restaurant),
+          builder: (_) => CartScreen(
+            restaurant: restaurant,
+            cartController: cartController,
+          ),
         ),
       ),
       child: Stack(
@@ -293,6 +354,7 @@ class _CartButton extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 '$count',
+                key: const Key('home_cart_badge_count'),
                 style: const TextStyle(
                   color: AppColors.prussian,
                   fontSize: 9,
@@ -464,9 +526,13 @@ class _CategoryChip extends StatelessWidget {
 }
 
 class _RestaurantCard extends StatelessWidget {
-  const _RestaurantCard({required this.restaurant});
+  const _RestaurantCard({
+    required this.restaurant,
+    required this.cartController,
+  });
 
   final Restaurant restaurant;
+  final FoodPulseCartController cartController;
 
   @override
   Widget build(BuildContext context) {
@@ -476,7 +542,10 @@ class _RestaurantCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => RestaurantScreen(restaurant: restaurant),
+          builder: (_) => RestaurantScreen(
+            restaurant: restaurant,
+            cartController: cartController,
+          ),
         ),
       ),
       child: Column(

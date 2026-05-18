@@ -125,7 +125,7 @@ class FoodPulseFallbackRepository {
 
     return RestaurantMenu(
       restaurant: restaurant,
-      items: MockFoodPulseData.menuItems,
+      items: MockFoodPulseData.menuItemsFor(restaurant.id),
     );
   }
 
