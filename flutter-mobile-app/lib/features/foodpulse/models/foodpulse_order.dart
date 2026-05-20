@@ -23,16 +23,50 @@ class RestaurantMenu {
 }
 
 class FoodPulseDeliveryAddress {
-  const FoodPulseDeliveryAddress({required this.label, this.notes});
+  const FoodPulseDeliveryAddress({
+    required this.label,
+    this.notes,
+    this.tag = 'Home',
+  });
 
   final String label;
   final String? notes;
+  final String tag;
 
   Map<String, dynamic> toJson() {
     return {
       'label': label,
       if (notes != null && notes!.trim().isNotEmpty) 'notes': notes,
     };
+  }
+}
+
+class FoodPulseRider {
+  const FoodPulseRider({
+    required this.name,
+    required this.phoneNumber,
+    required this.vehicleType,
+    required this.plateNumber,
+    required this.rating,
+    this.profileImageAsset,
+  });
+
+  final String name;
+  final String phoneNumber;
+  final String vehicleType;
+  final String plateNumber;
+  final double rating;
+  final String? profileImageAsset;
+
+  factory FoodPulseRider.fromJson(Map<String, dynamic>? json) {
+    return FoodPulseRider(
+      name: json?['name']?.toString() ?? 'Juan Dela Cruz',
+      phoneNumber: json?['phone_number']?.toString() ?? '0917 555 0148',
+      vehicleType: json?['vehicle_type']?.toString() ?? 'Motorcycle',
+      plateNumber: json?['plate_number']?.toString() ?? 'ABC 1234',
+      rating: (json?['rating'] as num?)?.toDouble() ?? 4.8,
+      profileImageAsset: json?['profile_image_asset']?.toString(),
+    );
   }
 }
 
@@ -192,6 +226,14 @@ class OrderConfirmation {
     required this.total,
     required this.risk,
     required this.trackingSteps,
+    this.rider = const FoodPulseRider(
+      name: 'Juan Dela Cruz',
+      phoneNumber: '0917 555 0148',
+      vehicleType: 'Motorcycle',
+      plateNumber: 'ABC 1234',
+      rating: 4.8,
+    ),
+    this.orderedAt,
   });
 
   final String orderNumber;
@@ -206,6 +248,8 @@ class OrderConfirmation {
   final int total;
   final FoodPulseOrderRisk risk;
   final List<FoodPulseTrackingStep> trackingSteps;
+  final FoodPulseRider rider;
+  final DateTime? orderedAt;
 
   factory OrderConfirmation.fromCheckout(CheckoutSummary checkout) {
     return OrderConfirmation(
@@ -222,10 +266,19 @@ class OrderConfirmation {
       risk: checkout.risk,
       trackingSteps: const [
         FoodPulseTrackingStep(label: 'Order placed', done: true),
-        FoodPulseTrackingStep(label: 'Merchant preparing', done: true),
-        FoodPulseTrackingStep(label: 'Rider assigned', done: false),
-        FoodPulseTrackingStep(label: 'Out for delivery', done: false),
+        FoodPulseTrackingStep(label: 'Restaurant preparing', done: true),
+        FoodPulseTrackingStep(label: 'Rider picking up', done: false),
+        FoodPulseTrackingStep(label: 'On the way', done: false),
+        FoodPulseTrackingStep(label: 'Delivered', done: false),
       ],
+      rider: const FoodPulseRider(
+        name: 'Juan Dela Cruz',
+        phoneNumber: '0917 555 0148',
+        vehicleType: 'Motorcycle',
+        plateNumber: 'ABC 1234',
+        rating: 4.8,
+      ),
+      orderedAt: DateTime.now(),
     );
   }
 
@@ -242,6 +295,8 @@ class OrderConfirmation {
     int? total,
     FoodPulseOrderRisk? risk,
     List<FoodPulseTrackingStep>? trackingSteps,
+    FoodPulseRider? rider,
+    DateTime? orderedAt,
   }) {
     return OrderConfirmation(
       orderNumber: orderNumber ?? this.orderNumber,
@@ -256,6 +311,8 @@ class OrderConfirmation {
       total: total ?? this.total,
       risk: risk ?? this.risk,
       trackingSteps: trackingSteps ?? this.trackingSteps,
+      rider: rider ?? this.rider,
+      orderedAt: orderedAt ?? this.orderedAt,
     );
   }
 
@@ -286,6 +343,10 @@ class OrderConfirmation {
                 FoodPulseTrackingStep.fromJson(step as Map<String, dynamic>),
           )
           .toList(),
+      rider: FoodPulseRider.fromJson(data['rider'] as Map<String, dynamic>?),
+      orderedAt:
+          DateTime.tryParse(data['ordered_at']?.toString() ?? '') ??
+          DateTime.now(),
     );
   }
 }

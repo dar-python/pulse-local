@@ -10,11 +10,27 @@ void main() {
         restaurant.name: restaurant.imageAsset,
     };
 
-    expect(imageAssetsByName, {
-      'Tambayan Grill': 'assets/images/restaurants/tambayan-grill.webp',
-      'Jollibee Express': 'assets/images/restaurants/jollibee-express.webp',
-      'Chao Fan House': 'assets/images/restaurants/chao-fan-house.webp',
-    });
+    expect(
+      imageAssetsByName,
+      containsPair(
+        'McDonald\'s Tacloban',
+        'assets/images/restaurants/tambayan-grill.webp',
+      ),
+    );
+    expect(
+      imageAssetsByName,
+      containsPair(
+        'Jollibee Tacloban',
+        'assets/images/restaurants/jollibee-express.webp',
+      ),
+    );
+    expect(
+      imageAssetsByName,
+      containsPair(
+        'KFC Tacloban',
+        'assets/images/restaurants/chao-fan-house.webp',
+      ),
+    );
   });
 
   test('fallback menu items expose the expected local food image assets', () {

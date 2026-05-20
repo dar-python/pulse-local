@@ -1,4 +1,25 @@
 services:
+  mysql:
+    image: mysql:8.4
+    container_name: pulselocal-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: pulselocal
+      MYSQL_USER: pulselocal
+      MYSQL_PASSWORD: pulselocal_secret
+      MYSQL_ROOT_PASSWORD: root_secret
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u pulselocal -ppulselocal_secret --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - pulselocal-network
+
   laravel-api:
     build:
       context: ./laravel-backend-api
@@ -16,6 +37,12 @@ services:
       SESSION_DRIVER: file
       CACHE_STORE: file
       QUEUE_CONNECTION: sync
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: pulselocal
+      DB_USERNAME: pulselocal
+      DB_PASSWORD: pulselocal_secret
 
       # Critical: Laravel calls ML by Docker service name, not localhost.
       ML_SERVICE_URL: http://ml-service:8001
@@ -24,6 +51,8 @@ services:
       - ./laravel-backend-api:/var/www/html
       - laravel_vendor:/var/www/html/vendor
     depends_on:
+      mysql:
+        condition: service_healthy
       ml-service:
         condition: service_healthy
     networks:
@@ -83,3 +112,4 @@ networks:
 
 volumes:
   laravel_vendor:
+  mysql_data:

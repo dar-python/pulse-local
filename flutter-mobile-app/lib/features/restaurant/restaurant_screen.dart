@@ -10,6 +10,7 @@ import '../../shared/widgets/foodpulse_asset_image.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../cart/cart_screen.dart';
 import '../cart/foodpulse_cart_controller.dart';
+import '../foodpulse/models/foodpulse_order.dart';
 import '../foodpulse/repositories/foodpulse_repository.dart';
 
 class RestaurantScreen extends StatefulWidget {
@@ -17,11 +18,17 @@ class RestaurantScreen extends StatefulWidget {
     super.key,
     Restaurant? restaurant,
     FoodPulseCartController? cartController,
+    FoodPulseDeliveryAddress? deliveryAddress,
+    ValueChanged<OrderConfirmation>? onOrderPlaced,
   }) : _restaurant = restaurant,
-       _cartController = cartController;
+       _cartController = cartController,
+       _deliveryAddress = deliveryAddress,
+       _onOrderPlaced = onOrderPlaced;
 
   final Restaurant? _restaurant;
   final FoodPulseCartController? _cartController;
+  final FoodPulseDeliveryAddress? _deliveryAddress;
+  final ValueChanged<OrderConfirmation>? _onOrderPlaced;
 
   @override
   State<RestaurantScreen> createState() => _RestaurantScreenState();
@@ -177,13 +184,24 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
-                            '★ ${_restaurant.rating.toStringAsFixed(1)}',
-                            style: const TextStyle(
-                              color: AppColors.orange,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                            ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.star_rounded,
+                                color: AppColors.orange,
+                                size: 15,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                _restaurant.rating.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  color: AppColors.orange,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 3),
                           Text(
@@ -218,7 +236,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            '${risk.label} fulfillment risk (${risk.score}%) · ETA on track',
+                            '${risk.label} fulfillment risk (${risk.score}%) / ETA on track',
                             style: TextStyle(
                               color: risk.color,
                               fontSize: 11,
@@ -254,7 +272,12 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                       ),
                       itemBuilder: (context, index) => _MenuItemRow(
                         item: visibleItems[index],
+                        quantity: _cartController.quantityForItem(
+                          visibleItems[index],
+                        ),
                         onAdd: () => _addMenuItem(visibleItems[index]),
+                        onRemove: () =>
+                            _cartController.decreaseItem(visibleItems[index]),
                       ),
                       separatorBuilder: (_, _) => Divider(
                         color: AppColors.white.withAlpha(14),
@@ -288,6 +311,8 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                       builder: (_) => CartScreen(
                         restaurant: _restaurant,
                         cartController: _cartController,
+                        deliveryAddress: widget._deliveryAddress,
+                        onOrderPlaced: widget._onOrderPlaced,
                       ),
                     ),
                   ),
@@ -621,10 +646,17 @@ class _MenuTabs extends StatelessWidget {
 }
 
 class _MenuItemRow extends StatelessWidget {
-  const _MenuItemRow({required this.item, required this.onAdd});
+  const _MenuItemRow({
+    required this.item,
+    required this.quantity,
+    required this.onAdd,
+    required this.onRemove,
+  });
 
   final MenuItem item;
+  final int quantity;
   final VoidCallback onAdd;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -691,27 +723,79 @@ class _MenuItemRow extends StatelessWidget {
               Positioned(
                 right: -8,
                 bottom: -8,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: onAdd,
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: const BoxDecoration(
-                      color: AppColors.orange,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.add_rounded,
-                      color: AppColors.prussian,
-                      size: 20,
-                    ),
-                  ),
-                ),
+                child: quantity == 0
+                    ? _MenuQuantityButton(icon: Icons.add_rounded, onTap: onAdd)
+                    : Container(
+                        height: 30,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.orange,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _MenuQuantityButton(
+                              icon: quantity == 1
+                                  ? Icons.delete_outline_rounded
+                                  : Icons.remove_rounded,
+                              onTap: onRemove,
+                              compact: true,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                              ),
+                              child: Text(
+                                '$quantity',
+                                style: const TextStyle(
+                                  color: AppColors.prussian,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            _MenuQuantityButton(
+                              icon: Icons.add_rounded,
+                              onTap: onAdd,
+                              compact: true,
+                            ),
+                          ],
+                        ),
+                      ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MenuQuantityButton extends StatelessWidget {
+  const _MenuQuantityButton({
+    required this.icon,
+    required this.onTap,
+    this.compact = false,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        width: compact ? 22 : 28,
+        height: compact ? 22 : 28,
+        decoration: BoxDecoration(
+          color: compact ? AppColors.prussian.withAlpha(24) : AppColors.orange,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: AppColors.prussian, size: compact ? 15 : 20),
       ),
     );
   }

@@ -182,10 +182,19 @@ class FoodPulseFallbackRepository {
       risk: checkoutSummary.risk,
       trackingSteps: const [
         FoodPulseTrackingStep(label: 'Order placed', done: true),
-        FoodPulseTrackingStep(label: 'Merchant preparing', done: true),
-        FoodPulseTrackingStep(label: 'Rider assigned', done: false),
-        FoodPulseTrackingStep(label: 'Out for delivery', done: false),
+        FoodPulseTrackingStep(label: 'Restaurant preparing', done: true),
+        FoodPulseTrackingStep(label: 'Rider picking up', done: false),
+        FoodPulseTrackingStep(label: 'On the way', done: false),
+        FoodPulseTrackingStep(label: 'Delivered', done: false),
       ],
+      rider: const FoodPulseRider(
+        name: 'Juan Dela Cruz',
+        phoneNumber: '0917 555 0148',
+        vehicleType: 'Motorcycle',
+        plateNumber: 'ABC 1234',
+        rating: 4.8,
+      ),
+      orderedAt: DateTime.now(),
     );
   }
 

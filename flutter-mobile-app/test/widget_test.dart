@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse_local_app/app/foodpulse_app.dart';
 import 'package:pulse_local_app/core/data/mock_foodpulse_data.dart';
@@ -16,7 +16,8 @@ void main() {
     await tester.pumpWidget(const FoodPulseApp());
 
     expect(find.text('FoodPulse'), findsOneWidget);
-    expect(find.text('Username: user / Password: pass'), findsOneWidget);
+    expect(find.text("Don't have an account?"), findsOneWidget);
+    expect(find.text('Register'), findsOneWidget);
 
     await tester.enterText(find.byKey(const Key('login_username')), 'bad');
     await tester.enterText(find.byKey(const Key('login_password')), 'creds');
@@ -52,9 +53,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Tacloban City, E. Visayas'), findsOneWidget);
-    expect(find.text('Tambayan Grill'), findsOneWidget);
+    expect(find.text("McDonald's Tacloban"), findsOneWidget);
 
-    await tester.tap(find.text('Tambayan Grill').first);
+    await tester.ensureVisible(find.text("McDonald's Tacloban").first);
+    await tester.tap(find.text("McDonald's Tacloban").first);
     await tester.pumpAndSettle();
 
     expect(
@@ -71,9 +73,9 @@ void main() {
 
     expect(find.text('My Cart'), findsOneWidget);
     expect(find.text('Total'), findsOneWidget);
-    expect(find.textContaining('244'), findsWidgets);
+    expect(find.textContaining('234'), findsWidgets);
 
-    await tester.tap(find.text('Proceed to Checkout →'));
+    await tester.tap(find.textContaining('Place order'));
     await tester.pumpAndSettle();
 
     expect(find.text('Fulfillment Risk Score'), findsOneWidget);

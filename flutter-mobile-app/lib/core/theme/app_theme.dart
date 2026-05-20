@@ -60,14 +60,23 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: AppColors.prussian,
+      scaffoldBackgroundColor: AppColors.midnight,
       fontFamily: 'Roboto',
+      textTheme: _textTheme,
+      primaryTextTheme: _textTheme,
       appBarTheme: const AppBarTheme(
         centerTitle: false,
-        backgroundColor: AppColors.prussian,
+        backgroundColor: AppColors.midnight,
         foregroundColor: AppColors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        titleTextStyle: TextStyle(
+          color: AppColors.white,
+          fontFamily: 'Roboto',
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0,
+        ),
       ),
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: AppColors.orange,
@@ -76,18 +85,28 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.white.withAlpha(18),
-        labelStyle: const TextStyle(color: AppColors.silver),
-        hintStyle: const TextStyle(color: AppColors.silver),
+        fillColor: AppColors.ink,
+        labelStyle: const TextStyle(
+          color: AppColors.silver,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0,
+        ),
+        hintStyle: const TextStyle(
+          color: AppColors.silver,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0,
+        ),
         prefixIconColor: AppColors.silver,
         suffixIconColor: AppColors.silver,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.white.withAlpha(24)),
+          borderSide: BorderSide(color: AppColors.white.withAlpha(20)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.white.withAlpha(24)),
+          borderSide: BorderSide(color: AppColors.white.withAlpha(20)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -103,7 +122,7 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.white.withAlpha(13),
+        color: AppColors.ink,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -114,6 +133,12 @@ class AppTheme {
           disabledBackgroundColor: AppColors.dusk,
           disabledForegroundColor: AppColors.silver,
           minimumSize: const Size.fromHeight(48),
+          textStyle: const TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
@@ -128,4 +153,91 @@ class AppTheme {
   }
 
   static ThemeData get light => dark;
+
+  static const _textTheme = TextTheme(
+    displayLarge: TextStyle(
+      fontFamily: 'Roboto',
+      color: AppColors.white,
+      fontSize: 32,
+      fontWeight: FontWeight.w900,
+      letterSpacing: 0,
+    ),
+    displayMedium: TextStyle(
+      fontFamily: 'Roboto',
+      color: AppColors.white,
+      fontSize: 28,
+      fontWeight: FontWeight.w900,
+      letterSpacing: 0,
+    ),
+    headlineSmall: TextStyle(
+      fontFamily: 'Roboto',
+      color: AppColors.white,
+      fontSize: 22,
+      fontWeight: FontWeight.w900,
+      letterSpacing: 0,
+    ),
+    titleLarge: TextStyle(
+      fontFamily: 'Roboto',
+      color: AppColors.white,
+      fontSize: 18,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0,
+    ),
+    titleMedium: TextStyle(
+      fontFamily: 'Roboto',
+      color: AppColors.white,
+      fontSize: 15,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0,
+    ),
+    titleSmall: TextStyle(
+      fontFamily: 'Roboto',
+      color: AppColors.white,
+      fontSize: 13,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0,
+    ),
+    bodyLarge: TextStyle(
+      fontFamily: 'Roboto',
+      color: AppColors.alabaster,
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0,
+    ),
+    bodyMedium: TextStyle(
+      fontFamily: 'Roboto',
+      color: AppColors.alabaster,
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0,
+    ),
+    bodySmall: TextStyle(
+      fontFamily: 'Roboto',
+      color: AppColors.silver,
+      fontSize: 11,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0,
+    ),
+    labelLarge: TextStyle(
+      fontFamily: 'Roboto',
+      color: AppColors.prussian,
+      fontSize: 14,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0,
+    ),
+    labelMedium: TextStyle(
+      fontFamily: 'Roboto',
+      color: AppColors.alabaster,
+      fontSize: 12,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0,
+    ),
+    labelSmall: TextStyle(
+      fontFamily: 'Roboto',
+      color: AppColors.silver,
+      fontSize: 10,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0,
+    ),
+  );
 }

@@ -38,7 +38,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Leyte Bowls'), findsOneWidget);
-    expect(find.text('Tambayan Grill'), findsNothing);
+    expect(find.text("McDonald's Tacloban"), findsNothing);
   });
 
   testWidgets('restaurant screen renders menu loaded from the repository', (
@@ -122,7 +122,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Tambayan Grill'), findsOneWidget);
+    expect(find.text("McDonald's Tacloban"), findsOneWidget);
     expect(find.text('Using saved local restaurant data.'), findsOneWidget);
   });
 }

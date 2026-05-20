@@ -2,43 +2,113 @@ import '../constants/foodpulse_image_assets.dart';
 import '../models/cart_item.dart';
 import '../models/menu_item.dart';
 import '../models/restaurant.dart';
+import '../../features/foodpulse/models/foodpulse_order.dart';
 
 class MockFoodPulseData {
   const MockFoodPulseData._();
 
+  static const savedAddresses = [
+    FoodPulseDeliveryAddress(
+      tag: 'Home',
+      label: 'Tacloban City, E. Visayas',
+      notes: 'Lnu gate Independencia St, Leyte',
+    ),
+    FoodPulseDeliveryAddress(
+      tag: 'Work',
+      label: '929 San Isidro St',
+      notes: 'Tacloban City, Leyte',
+    ),
+    FoodPulseDeliveryAddress(
+      tag: 'Favorite',
+      label: 'Soya Wheat Bakeshop Alvarado St.',
+      notes: 'Downtown Tacloban, Leyte',
+    ),
+  ];
+
   static const restaurants = [
     Restaurant(
       id: 1,
-      name: 'Tambayan Grill',
-      cuisine: 'Filipino - Grills',
+      name: 'McDonald\'s Tacloban',
+      cuisine: 'Burgers - Fast Food',
       rating: 4.8,
       deliveryTime: '15-25 min',
       minimumOrder: 99,
-      emoji: 'TG',
+      distance: '1.1 km',
+      deliveryFee: 39,
+      emoji: 'M',
       riskScore: 28,
       imageAsset: FoodPulseImageAssets.tambayanGrill,
+      branchAddress: 'Real St, Downtown Tacloban',
     ),
     Restaurant(
       id: 2,
-      name: 'Jollibee Express',
+      name: 'Jollibee Tacloban',
       cuisine: 'Fast Food',
       rating: 4.9,
       deliveryTime: '10-20 min',
       minimumOrder: 79,
+      distance: '0.8 km',
+      deliveryFee: 29,
       emoji: 'JB',
       riskScore: 62,
       imageAsset: FoodPulseImageAssets.jollibeeExpress,
+      branchAddress: 'Justice Romualdez St, Tacloban City',
     ),
     Restaurant(
       id: 3,
-      name: 'Chao Fan House',
-      cuisine: 'Chinese - Meals',
+      name: 'KFC Tacloban',
+      cuisine: 'Chicken - Fast Food',
+      rating: 4.6,
+      deliveryTime: '20-30 min',
+      minimumOrder: 99,
+      distance: '1.6 km',
+      deliveryFee: 49,
+      emoji: 'KFC',
+      riskScore: 54,
+      imageAsset: FoodPulseImageAssets.chaoFanHouse,
+      branchAddress: 'Robinsons North Tacloban',
+    ),
+    Restaurant(
+      id: 4,
+      name: 'Chowking Tacloban',
+      cuisine: 'Chinese - Rice Meals',
       rating: 4.6,
       deliveryTime: '20-35 min',
       minimumOrder: 89,
-      emoji: 'CF',
+      distance: '1.4 km',
+      deliveryFee: 45,
+      emoji: 'CK',
       riskScore: 81,
       imageAsset: FoodPulseImageAssets.chaoFanHouse,
+      branchAddress: 'Zamora St, Tacloban City',
+    ),
+    Restaurant(
+      id: 5,
+      name: 'Shakey\'s Tacloban',
+      cuisine: 'Pizza - Chicken',
+      rating: 4.7,
+      deliveryTime: '25-40 min',
+      minimumOrder: 199,
+      distance: '2.2 km',
+      deliveryFee: 59,
+      emoji: 'SK',
+      riskScore: 44,
+      imageAsset: FoodPulseImageAssets.tambayanGrill,
+      branchAddress: 'P. Burgos St, Tacloban City',
+    ),
+    Restaurant(
+      id: 6,
+      name: 'Greenwich Tacloban',
+      cuisine: 'Pizza - Pasta',
+      rating: 4.5,
+      deliveryTime: '20-35 min',
+      minimumOrder: 149,
+      distance: '1.9 km',
+      deliveryFee: 49,
+      emoji: 'GW',
+      riskScore: 36,
+      imageAsset: FoodPulseImageAssets.jollibeeExpress,
+      branchAddress: 'Rizal Ave, Tacloban City',
     ),
   ];
 
@@ -195,6 +265,87 @@ class MockFoodPulseData {
     imageAsset: FoodPulseImageAssets.buchi,
   );
 
+  static const mcdoBurger = MenuItem(
+    id: 16,
+    restaurantId: 1,
+    name: 'Cheeseburger Meal',
+    description: 'Classic cheeseburger with fries and iced tea',
+    price: 169,
+    emoji: 'CB',
+    category: 'Bestsellers',
+    imageAsset: FoodPulseImageAssets.yumburger,
+  );
+  static const mcdoChicken = MenuItem(
+    id: 17,
+    restaurantId: 1,
+    name: 'McChicken Meal',
+    description: 'Crispy chicken sandwich with fries',
+    price: 185,
+    emoji: 'MC',
+    category: 'Chicken',
+    imageAsset: FoodPulseImageAssets.chickenjoyMeal,
+  );
+  static const kfcChicken = MenuItem(
+    id: 18,
+    restaurantId: 3,
+    name: '1-pc Chicken Meal',
+    description: 'Original recipe chicken with rice and gravy',
+    price: 155,
+    emoji: 'KC',
+    category: 'Bestsellers',
+    imageAsset: FoodPulseImageAssets.chickenjoyMeal,
+  );
+  static const kfcZinger = MenuItem(
+    id: 19,
+    restaurantId: 3,
+    name: 'Zinger Combo',
+    description: 'Spicy chicken fillet sandwich with fries',
+    price: 199,
+    emoji: 'ZG',
+    category: 'Sandwiches',
+    imageAsset: FoodPulseImageAssets.yumburger,
+  );
+  static const shakeysPizza = MenuItem(
+    id: 20,
+    restaurantId: 5,
+    name: 'Manager\'s Choice Pizza',
+    description: 'Thin-crust pizza with ham, beef, peppers, and onions',
+    price: 429,
+    emoji: 'MP',
+    category: 'Bestsellers',
+    imageAsset: FoodPulseImageAssets.pancitCanton,
+  );
+  static const shakeysChicken = MenuItem(
+    id: 21,
+    restaurantId: 5,
+    name: 'Chicken \'N Mojos',
+    description: 'Crispy chicken with signature potato mojos',
+    price: 345,
+    emoji: 'CM',
+    category: 'Chicken',
+    imageAsset: FoodPulseImageAssets.chickenInasal,
+  );
+  static const greenwichLasagna = MenuItem(
+    id: 22,
+    restaurantId: 6,
+    name: 'Lasagna Supreme',
+    description: 'Baked pasta with beefy tomato sauce and cheese',
+    price: 165,
+    emoji: 'LS',
+    category: 'Bestsellers',
+    imageAsset: FoodPulseImageAssets.jollySpaghetti,
+  );
+  static const greenwichPizza = MenuItem(
+    id: 23,
+    restaurantId: 6,
+    name: 'Hawaiian Overload',
+    description: 'Pizza with ham, pineapple, and mozzarella',
+    price: 299,
+    emoji: 'HP',
+    category: 'Pizza',
+    imageAsset: FoodPulseImageAssets.pancitCanton,
+  );
+
   static const menuItems = [
     porkSinigang,
     chickenInasal,
@@ -211,6 +362,14 @@ class MockFoodPulseData {
     siomai,
     wontonNoodles,
     buchi,
+    mcdoBurger,
+    mcdoChicken,
+    kfcChicken,
+    kfcZinger,
+    shakeysPizza,
+    shakeysChicken,
+    greenwichLasagna,
+    greenwichPizza,
   ];
 
   static const defaultCart = [

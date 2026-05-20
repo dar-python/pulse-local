@@ -14,16 +14,16 @@ class RiskGauge extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: 220,
-      height: 124,
+      height: 136,
       child: Stack(
         alignment: Alignment.center,
         children: [
           CustomPaint(
-            size: const Size(220, 124),
+            size: const Size(220, 128),
             painter: _RiskGaugePainter(risk: risk),
           ),
           Positioned(
-            top: 44,
+            top: 42,
             child: Column(
               children: [
                 Text(
@@ -46,23 +46,53 @@ class RiskGauge extends StatelessWidget {
               ],
             ),
           ),
-          const Positioned(
-            left: 16,
-            bottom: 12,
-            child: Text(
-              '0',
-              style: TextStyle(color: AppColors.silver, fontSize: 10),
+          Positioned(
+            left: 20,
+            bottom: 14,
+            child: _ScaleLabel(
+              label: '0%',
+              alignment: Alignment.centerLeft,
             ),
           ),
-          const Positioned(
-            right: 10,
-            bottom: 12,
-            child: Text(
-              '100',
-              style: TextStyle(color: AppColors.silver, fontSize: 10),
+          Positioned(
+            right: 12,
+            bottom: 14,
+            child: _ScaleLabel(
+              label: '100%',
+              alignment: Alignment.centerRight,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ScaleLabel extends StatelessWidget {
+  const _ScaleLabel({required this.label, required this.alignment});
+
+  final String label;
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 42,
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.prussian.withAlpha(165),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.white.withAlpha(16)),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        style: const TextStyle(
+          color: AppColors.silver,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }
@@ -75,15 +105,15 @@ class _RiskGaugePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Rect.fromLTWH(14, 18, size.width - 28, size.height * 1.55);
+    final rect = Rect.fromLTWH(18, 18, size.width - 36, size.height * 1.42);
     final trackPaint = Paint()
       ..color = AppColors.white.withAlpha(18)
-      ..strokeWidth = 14
+      ..strokeWidth = 13
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
     final progressPaint = Paint()
       ..color = risk.color
-      ..strokeWidth = 14
+      ..strokeWidth = 13
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 

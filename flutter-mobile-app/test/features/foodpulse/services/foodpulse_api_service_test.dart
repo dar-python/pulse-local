@@ -18,7 +18,7 @@ void main() {
         'data': [
           {
             'id': 1,
-            'name': 'Tambayan Grill',
+            'name': "McDonald's Tacloban",
             'cuisine': 'Filipino - Grills',
             'rating': 4.8,
             'delivery_time': '15-25 min',
@@ -35,7 +35,7 @@ void main() {
 
     expect(adapter.requests.single.method, 'GET');
     expect(adapter.requests.single.path, '/api/restaurants');
-    expect(restaurants.single.name, 'Tambayan Grill');
+    expect(restaurants.single.name, "McDonald's Tacloban");
   });
 
   test('loads menu items for a restaurant from Laravel', () async {
@@ -46,7 +46,7 @@ void main() {
         'data': {
           'restaurant': {
             'id': 1,
-            'name': 'Tambayan Grill',
+            'name': "McDonald's Tacloban",
             'cuisine': 'Filipino - Grills',
             'rating': 4.8,
             'delivery_time': '15-25 min',
@@ -73,7 +73,7 @@ void main() {
 
     expect(adapter.requests.single.method, 'GET');
     expect(adapter.requests.single.path, '/api/restaurants/1/menu');
-    expect(menu.restaurant.name, 'Tambayan Grill');
+    expect(menu.restaurant.name, "McDonald's Tacloban");
     expect(menu.items.single.name, 'Pork Sinigang');
   });
 
@@ -174,7 +174,7 @@ Dio _dio(_QueueAdapter adapter) {
 Map<String, Object?> _restaurantJson() {
   return {
     'id': 1,
-    'name': 'Tambayan Grill',
+    'name': "McDonald's Tacloban",
     'cuisine': 'Filipino - Grills',
     'rating': 4.8,
     'delivery_time': '15-25 min',

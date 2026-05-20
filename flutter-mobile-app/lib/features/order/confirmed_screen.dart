@@ -34,9 +34,10 @@ class ConfirmedScreen extends StatelessWidget {
     final trackingSteps = order.trackingSteps.isEmpty
         ? const [
             FoodPulseTrackingStep(label: 'Order placed', done: true),
-            FoodPulseTrackingStep(label: 'Merchant preparing', done: true),
-            FoodPulseTrackingStep(label: 'Rider assigned', done: false),
-            FoodPulseTrackingStep(label: 'Out for delivery', done: false),
+            FoodPulseTrackingStep(label: 'Restaurant preparing', done: true),
+            FoodPulseTrackingStep(label: 'Rider picking up', done: false),
+            FoodPulseTrackingStep(label: 'On the way', done: false),
+            FoodPulseTrackingStep(label: 'Delivered', done: false),
           ]
         : order.trackingSteps;
 
@@ -281,6 +282,74 @@ class ConfirmedScreen extends StatelessWidget {
                         done: trackingSteps[index].done,
                         isLast: index == trackingSteps.length - 1,
                       ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Delivery Rider',
+                      style: TextStyle(
+                        color: AppColors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            color: AppColors.orange.withAlpha(30),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.orange.withAlpha(100),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.person_rounded,
+                            color: AppColors.orange,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                order.rider.name,
+                                style: const TextStyle(
+                                  color: AppColors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                '${order.rider.vehicleType} - Plate ${order.rider.plateNumber}',
+                                style: const TextStyle(
+                                  color: AppColors.silver,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                '${order.rider.phoneNumber} - Rating ${order.rider.rating.toStringAsFixed(1)}',
+                                style: const TextStyle(
+                                  color: AppColors.silver,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),

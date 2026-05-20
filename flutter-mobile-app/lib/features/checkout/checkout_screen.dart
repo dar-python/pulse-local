@@ -28,12 +28,14 @@ class CheckoutScreen extends StatefulWidget {
     String? initialPaymentMethod,
     FoodPulseCheckoutRiskRepository? checkoutRiskRepository,
     FoodPulseRepository? foodPulseRepository,
+    ValueChanged<OrderConfirmation>? onOrderPlaced,
   }) : _restaurant = restaurant,
        _items = items,
        _deliveryAddress = deliveryAddress,
        _initialPaymentMethod = initialPaymentMethod,
        _checkoutRiskRepository = checkoutRiskRepository,
-       _foodPulseRepository = foodPulseRepository;
+       _foodPulseRepository = foodPulseRepository,
+       _onOrderPlaced = onOrderPlaced;
 
   final Restaurant? _restaurant;
   final List<CartItem>? _items;
@@ -41,6 +43,7 @@ class CheckoutScreen extends StatefulWidget {
   final String? _initialPaymentMethod;
   final FoodPulseCheckoutRiskRepository? _checkoutRiskRepository;
   final FoodPulseRepository? _foodPulseRepository;
+  final ValueChanged<OrderConfirmation>? _onOrderPlaced;
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -54,7 +57,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   late final Restaurant _restaurant;
   late final List<CartItem> _items;
-  late final FoodPulseDeliveryAddress _deliveryAddress;
+  late FoodPulseDeliveryAddress _deliveryAddress;
   late final FoodPulseCheckoutRiskRepository _checkoutRiskRepository;
   FoodPulseRepository? _foodPulseRepository;
   String? _paymentMethod;
@@ -179,55 +182,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-              AppCard(
-                color: AppColors.tangerine.withAlpha(24),
-                borderColor: AppColors.tangerine.withAlpha(52),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'FoodPulse Risk Advisories',
-                      style: TextStyle(
-                        color: AppColors.tangerine,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _AdvisoryLine(
-                      icon: _riskAdvisoryIcon,
-                      text: _primaryRiskAdvisory,
-                    ),
-                    const SizedBox(height: 8),
-                    if (_secondaryRiskAdvisory != null) ...[
-                      _AdvisoryLine(
-                        icon: Icons.sync_alt_rounded,
-                        text: _secondaryRiskAdvisory!,
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    _AdvisoryLine(
-                      icon: Icons.schedule_rounded,
-                      text: _etaAdvisory,
-                    ),
-                    const SizedBox(height: 8),
-                    const _AdvisoryLine(
-                      icon: Icons.account_balance_wallet_rounded,
-                      text: 'Prepayment recommended to secure your order slot',
-                    ),
-                    const SizedBox(height: 8),
-                    const _AdvisoryLine(
-                      icon: Icons.notifications_active_outlined,
-                      text: 'Merchant alerted to begin preparation immediately',
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: 14),
               const _SectionTitle('Delivery Address'),
               const SizedBox(height: 8),
               AppCard(
+                onTap: _showDeliveryAddressSelector,
                 child: Row(
                   children: [
                     const Icon(
@@ -263,12 +222,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ],
                       ),
                     ),
-                    const Text(
-                      'Edit',
-                      style: TextStyle(
-                        color: AppColors.orange,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
+                    TextButton(
+                      onPressed: _showDeliveryAddressSelector,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.orange,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        minimumSize: const Size(44, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        'Edit',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
                   ],
@@ -392,69 +359,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  IconData get _riskAdvisoryIcon {
-    if (_riskErrorMessage != null) {
-      return Icons.info_outline_rounded;
-    }
-    if (_isRiskLoading) {
-      return Icons.hourglass_top_rounded;
-    }
-    if (_isLaravelFallback(_riskPrediction)) {
-      return Icons.warning_amber_rounded;
-    }
-    return Icons.insights_rounded;
-  }
-
-  String get _primaryRiskAdvisory {
-    if (_isRiskLoading) {
-      return 'Calculating fulfillment risk through Laravel before checkout.';
-    }
-    if (_riskErrorMessage != null) {
-      return 'Risk prediction is unavailable right now. You can still place your order.';
-    }
-
-    final prediction = _riskPrediction;
-    if (_isLaravelFallback(prediction)) {
-      return 'Fallback risk mode active. You can still place your order.';
-    }
-
-    return prediction?.recommendation ??
-        'Risk prediction is unavailable right now. You can still place your order.';
-  }
-
-  String? get _secondaryRiskAdvisory {
-    final errorMessage = _riskErrorMessage;
-    if (errorMessage != null) {
-      return errorMessage;
-    }
-
-    final prediction = _riskPrediction;
-    if (prediction == null) {
-      return null;
-    }
-
-    return 'Risk source: ${prediction.source}';
-  }
-
-  String get _etaAdvisory {
-    if (_isRiskLoading) {
-      return 'ETA updates after Laravel finishes the checkout risk prediction.';
-    }
-
-    final etaRange = _etaRangeFromPrediction(_riskPrediction);
-    if (etaRange == null) {
-      return 'Adjusted ETA: 30-45 min while prediction is unavailable.';
-    }
-
-    return 'Adjusted ETA: $etaRange based on the current checkout risk.';
-  }
-
   void _selectPaymentMethod(String paymentMethod) {
     if (_paymentMethod == paymentMethod) {
       return;
     }
 
     setState(() => _paymentMethod = paymentMethod);
+    _loadCheckoutRisk();
+  }
+
+  Future<void> _showDeliveryAddressSelector() async {
+    final selected = await showModalBottomSheet<FoodPulseDeliveryAddress>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) =>
+          _DeliveryAddressSheet(selectedAddress: _deliveryAddress),
+    );
+
+    if (selected == null || !mounted) {
+      return;
+    }
+
+    setState(() => _deliveryAddress = selected);
     _loadCheckoutRisk();
   }
 
@@ -539,6 +466,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         _isSubmittingOrder = false;
         _orderProgressLabel = null;
       });
+      widget._onOrderPlaced?.call(orderConfirmation);
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => ConfirmedScreen(
@@ -573,13 +501,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         _orderProgressLabel = null;
         _orderErrorMessage = null;
       });
+      final orderConfirmation = fallbackConfirmation.copyWith(
+        risk: fallbackRisk,
+        estimatedArrival: fallbackEta,
+      );
+      widget._onOrderPlaced?.call(orderConfirmation);
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => ConfirmedScreen(
-            orderConfirmation: fallbackConfirmation.copyWith(
-              risk: fallbackRisk,
-              estimatedArrival: fallbackEta,
-            ),
+            orderConfirmation: orderConfirmation,
             fallbackMessage: message,
           ),
         ),
@@ -870,6 +800,143 @@ class _RiskSummary extends StatelessWidget {
   }
 }
 
+class _DeliveryAddressSheet extends StatelessWidget {
+  const _DeliveryAddressSheet({required this.selectedAddress});
+
+  final FoodPulseDeliveryAddress selectedAddress;
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.62,
+      maxChildSize: 0.86,
+      minChildSize: 0.42,
+      builder: (context, controller) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: AppColors.prussian,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+          ),
+          child: ListView(
+            controller: controller,
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.silver.withAlpha(95),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Delivery Address',
+                style: TextStyle(
+                  color: AppColors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Changing address recalculates fulfillment risk and ETA.',
+                style: TextStyle(color: AppColors.silver, fontSize: 11),
+              ),
+              const SizedBox(height: 14),
+              for (final address in MockFoodPulseData.savedAddresses) ...[
+                _AddressOptionTile(
+                  address: address,
+                  selected: address.label == selectedAddress.label,
+                  onTap: () => Navigator.pop(context, address),
+                ),
+                const SizedBox(height: 8),
+              ],
+              _AddressOptionTile(
+                address: const FoodPulseDeliveryAddress(
+                  tag: 'Current',
+                  label: 'Current location',
+                  notes: 'Tacloban City, Leyte',
+                ),
+                selected: selectedAddress.label == 'Current location',
+                onTap: () => Navigator.pop(
+                  context,
+                  const FoodPulseDeliveryAddress(
+                    tag: 'Current',
+                    label: 'Current location',
+                    notes: 'Tacloban City, Leyte',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _AddressOptionTile extends StatelessWidget {
+  const _AddressOptionTile({
+    required this.address,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final FoodPulseDeliveryAddress address;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      onTap: onTap,
+      borderColor: selected
+          ? AppColors.orange.withAlpha(150)
+          : AppColors.white.withAlpha(18),
+      color: selected ? AppColors.orange.withAlpha(20) : null,
+      child: Row(
+        children: [
+          Icon(
+            selected
+                ? Icons.radio_button_checked_rounded
+                : Icons.radio_button_unchecked_rounded,
+            color: selected ? AppColors.orange : AppColors.silver,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  address.label,
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  address.notes ?? address.tag,
+                  style: const TextStyle(
+                    color: AppColors.silver,
+                    fontSize: 11,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ButtonSpinner extends StatelessWidget {
   const _ButtonSpinner();
 
@@ -986,34 +1053,6 @@ class _RiskLoadingGauge extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _AdvisoryLine extends StatelessWidget {
-  const _AdvisoryLine({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: AppColors.tangerine, size: 16),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: AppColors.alabaster,
-              fontSize: 11,
-              height: 1.45,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

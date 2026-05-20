@@ -24,4 +24,8 @@ class DioClient {
   Future<Response<dynamic>> post(String path, {Object? data}) {
     return dio.post(path, data: data);
   }
+
+  Future<Response<dynamic>> put(String path, {Object? data}) {
+    return dio.put(path, data: data);
+  }
 }

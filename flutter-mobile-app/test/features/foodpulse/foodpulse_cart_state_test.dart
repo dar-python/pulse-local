@@ -37,7 +37,7 @@ void main() {
     await tester.tap(find.text('View Cart'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Tambayan Grill'), findsOneWidget);
+    expect(find.text("McDonald's Tacloban"), findsOneWidget);
     expect(find.text('Pork Sinigang'), findsOneWidget);
     expect(find.textContaining('370'), findsNothing);
   });
@@ -66,7 +66,8 @@ void main() {
       '0',
     );
 
-    await tester.tap(find.text('Tambayan Grill').first);
+    await tester.ensureVisible(find.text("McDonald's Tacloban").first);
+    await tester.tap(find.text("McDonald's Tacloban").first);
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.add_rounded).first);
     await tester.pumpAndSettle();
@@ -107,12 +108,12 @@ void main() {
     await tester.tap(find.text('View Cart'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Jollibee Express'), findsOneWidget);
+    expect(find.text('Jollibee Tacloban'), findsOneWidget);
     expect(find.text('Chickenjoy Meal'), findsOneWidget);
     expect(find.textContaining('149'), findsWidgets);
-    expect(find.textContaining('208'), findsWidgets);
+    expect(find.textContaining('188'), findsWidgets);
 
-    await tester.tap(find.textContaining('Proceed to Checkout'));
+    await tester.tap(find.textContaining('Place order'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.textContaining('Place Order'));
     await tester.tap(find.textContaining('Place Order'));
@@ -120,7 +121,7 @@ void main() {
 
     expect(
       repository.checkoutRequests.single.restaurant.name,
-      'Jollibee Express',
+      'Jollibee Tacloban',
     );
     expect(repository.checkoutRequests.single.items, hasLength(1));
     expect(
@@ -151,15 +152,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Tambayan Grill').first);
+    await tester.ensureVisible(find.text("McDonald's Tacloban").first);
+    await tester.tap(find.text("McDonald's Tacloban").first);
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.add_rounded).first);
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.arrow_back_rounded));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('Jollibee Express').first);
-    await tester.tap(find.text('Jollibee Express').first);
+    await tester.ensureVisible(find.text('Jollibee Tacloban').first);
+    await tester.tap(find.text('Jollibee Tacloban').first);
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.add_rounded).first);
     await tester.pumpAndSettle();
@@ -178,7 +180,7 @@ void main() {
     await tester.tap(find.text('View Cart'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Jollibee Express'), findsOneWidget);
+    expect(find.text('Jollibee Tacloban'), findsOneWidget);
     expect(find.text('Chickenjoy Meal'), findsOneWidget);
     expect(find.text('Pork Sinigang'), findsNothing);
   });

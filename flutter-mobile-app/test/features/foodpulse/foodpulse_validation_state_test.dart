@@ -30,7 +30,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No restaurants available right now.'), findsOneWidget);
-    expect(find.text('Tambayan Grill'), findsNothing);
+    expect(find.text("McDonald's Tacloban"), findsNothing);
   });
 
   testWidgets(
@@ -400,7 +400,7 @@ void main() {
             estimatedArrival: '',
             restaurant: Restaurant(
               id: 1,
-              name: 'Tambayan Grill',
+              name: "McDonald's Tacloban",
               cuisine: 'Filipino',
               rating: 4.8,
               deliveryTime: '15-25 min',

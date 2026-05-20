@@ -24,10 +24,17 @@ class FoodPulseBottomNav extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        height: 64,
+        height: 70,
         decoration: BoxDecoration(
           color: AppColors.prussian,
-          border: Border(top: BorderSide(color: AppColors.white.withAlpha(16))),
+          border: Border(top: BorderSide(color: AppColors.white.withAlpha(14))),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.midnight.withAlpha(120),
+              blurRadius: 18,
+              offset: const Offset(0, -8),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -66,20 +73,34 @@ class _NavItem extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              width: 36,
+              height: 28,
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColors.orange.withAlpha(28)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: color, size: 21),
             ),
-          ),
-        ],
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 10,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

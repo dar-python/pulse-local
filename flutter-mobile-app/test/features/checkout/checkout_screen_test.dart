@@ -58,7 +58,7 @@ void main() {
 
     expect(repository.requests.single.toJson(), {
       'restaurant_id': 2,
-      'restaurant_slug': 'jollibee-express',
+      'restaurant_slug': 'jollibee-tacloban',
       'items': [
         {
           'id': 6,

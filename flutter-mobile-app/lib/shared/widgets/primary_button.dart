@@ -27,16 +27,25 @@ class PrimaryButton extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         decoration: BoxDecoration(
           color: enabled ? AppColors.orange : AppColors.dusk.withAlpha(170),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: enabled ? AppColors.orange : AppColors.white.withAlpha(18),
           ),
+          boxShadow: enabled
+              ? [
+                  BoxShadow(
+                    color: AppColors.orange.withAlpha(55),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
+              : null,
         ),
         child: Material(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
           child: InkWell(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
             onTap: onPressed,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -53,7 +62,7 @@ class PrimaryButton extends StatelessWidget {
                       style: TextStyle(
                         color: enabled ? AppColors.prussian : AppColors.silver,
                         fontSize: 14,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),

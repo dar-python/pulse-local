@@ -4,8 +4,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class AppConfig {
   AppConfig._();
 
-  static const String _androidEmulatorBaseUrl = 'http://10.0.2.2:8000';
-  static const String _windowsDesktopBaseUrl = 'http://127.0.0.1:8000';
+  static const String _androidEmulatorBaseUrl = 'http://10.0.2.2:8080';
+  static const String _windowsDesktopBaseUrl = 'http://127.0.0.1:8080';
 
   static String get apiBaseUrl {
     const laravelDartDefineValue = String.fromEnvironment('LARAVEL_BASE_URL');
@@ -54,6 +54,16 @@ class AppConfig {
 
     if (trimmed.endsWith('/api')) {
       trimmed = trimmed.substring(0, trimmed.length - 4);
+    }
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      final uri = Uri.tryParse(trimmed);
+      if (uri != null &&
+          (uri.host == '127.0.0.1' || uri.host.toLowerCase() == 'localhost')) {
+        return uri
+            .replace(host: Uri.parse(_androidEmulatorBaseUrl).host)
+            .toString();
+      }
     }
 
     return trimmed;
