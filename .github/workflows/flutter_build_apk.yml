@@ -1,0 +1,69 @@
+name: Flutter Build APK
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feature/**
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: Build Flutter Release APK
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: flutter-mobile-app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Prepare Flutter environment
+        run: |
+          if [ -f .env.example ]; then
+            cp .env.example .env
+          else
+            printf '%s\n' \
+              'LARAVEL_BASE_URL=http://127.0.0.1:8000' \
+              'APP_ENV=ci' > .env
+          fi
+
+      - name: Show Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze Flutter code
+        run: flutter analyze
+
+      - name: Run Flutter tests
+        run: flutter test
+
+      - name: Build release APK
+        run: flutter build apk --release --dart-define=LARAVEL_BASE_URL=http://127.0.0.1:8000
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: foodpulse-release-apk
+          path: flutter-mobile-app/build/app/outputs/flutter-apk/app-release.apk
