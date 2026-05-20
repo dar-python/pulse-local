@@ -66,7 +66,30 @@ class CartScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Header(title: 'My Cart', onBack: () => Navigator.pop(context)),
+              Row(
+                children: [
+                  Expanded(
+                    child: _Header(
+                      title: 'My Cart',
+                      onBack: () => Navigator.pop(context),
+                    ),
+                  ),
+                  if (items.isNotEmpty && cartController != null)
+                    TextButton(
+                      key: const Key('cart_clear_all'),
+                      onPressed: () =>
+                          _confirmClearCart(context, cartController),
+                      child: const Text(
+                        'Clear all',
+                        style: TextStyle(
+                          color: AppColors.orange,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 12),
               AppCard(
                 child: Row(
@@ -103,9 +126,15 @@ class CartScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              if (items.isEmpty)
-                const _EmptyCartState()
-              else ...[
+              if (items.isEmpty) ...[
+                const _EmptyCartState(),
+                const SizedBox(height: 14),
+                const PrimaryButton(
+                  key: Key('cart_checkout_button'),
+                  label: 'Proceed to Checkout',
+                  onPressed: null,
+                ),
+              ] else ...[
                 for (final cartItem in items)
                   _CartItemRow(
                     cartItem: cartItem,
@@ -157,6 +186,7 @@ class CartScreen extends StatelessWidget {
                 _PromoBox(),
                 const SizedBox(height: 14),
                 PrimaryButton(
+                  key: const Key('cart_checkout_button'),
                   label: 'Place order - P$total',
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
@@ -183,6 +213,45 @@ class CartScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmClearCart(
+    BuildContext context,
+    FoodPulseCartController cartController,
+  ) async {
+    final shouldClear = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.prussian,
+          title: const Text(
+            'Clear all items from your cart?',
+            style: TextStyle(
+              color: AppColors.white,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: const Text(
+            'This removes every item in your current order.',
+            style: TextStyle(color: AppColors.silver),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Clear Cart'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldClear == true) {
+      cartController.clear();
+    }
   }
 }
 
@@ -335,6 +404,7 @@ class _CartItemRow extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _QuantityIconButton(
+                    key: Key('cart_item_decrease_${item.id}'),
                     icon: cartItem.quantity <= 1
                         ? Icons.delete_outline_rounded
                         : Icons.remove_rounded,
@@ -352,12 +422,14 @@ class _CartItemRow extends StatelessWidget {
                     ),
                   ),
                   _QuantityIconButton(
+                    key: Key('cart_item_increase_${item.id}'),
                     icon: Icons.add_rounded,
                     onTap: onIncrease,
                   ),
                 ],
               ),
               TextButton(
+                key: Key('cart_item_remove_${item.id}'),
                 onPressed: onRemove,
                 style: TextButton.styleFrom(
                   visualDensity: VisualDensity.compact,
@@ -382,7 +454,11 @@ class _CartItemRow extends StatelessWidget {
 }
 
 class _QuantityIconButton extends StatelessWidget {
-  const _QuantityIconButton({required this.icon, required this.onTap});
+  const _QuantityIconButton({
+    super.key,
+    required this.icon,
+    required this.onTap,
+  });
 
   final IconData icon;
   final VoidCallback? onTap;

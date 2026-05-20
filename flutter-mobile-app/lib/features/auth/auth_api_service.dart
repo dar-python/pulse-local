@@ -10,6 +10,7 @@ class AuthApiService {
 
   final DioClient _dioClient;
 
+
   Future<AuthUser> register({
     required String username,
     required String email,

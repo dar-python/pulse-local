@@ -11,10 +11,15 @@ import 'auth_api_service.dart';
 import 'demo_account.dart';
 import 'register_screen.dart';
 
+const _loginNavy = Color(0xFF061A2F);
+const _loginNavyTop = Color(0xFF051428);
+const _loginNavyBottom = Color(0xFF071E38);
+
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.message});
+  const LoginScreen({super.key, this.message, this.authApiService});
 
   final String? message;
+  final AuthApiService? authApiService;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -23,7 +28,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authApiService = AuthApiService();
+  late final AuthApiService _authApiService;
   String? _errorMessage;
   String? _successMessage;
   Timer? _successMessageTimer;
@@ -33,6 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    _authApiService = widget.authApiService ?? AuthApiService();
     _successMessage = widget.message;
 
     if (_successMessage != null) {
@@ -136,49 +142,63 @@ class _LoginScreenState extends State<LoginScreen> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,
-        systemNavigationBarColor: AppColors.midnight,
+        statusBarIconBrightness: Brightness.light,
+        systemStatusBarContrastEnforced: false,
+        systemNavigationBarColor: _loginNavy,
+        systemNavigationBarDividerColor: _loginNavy,
+        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarContrastEnforced: false,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.midnight,
-        body: Stack(
-          children: [
-            const Positioned.fill(child: _LoginBackdrop()),
-            SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 28),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 500),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 6),
-                        const _LoginHero(),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 22),
-                          child: _LoginPanel(
-                            usernameController: _usernameController,
-                            passwordController: _passwordController,
-                            obscurePassword: _obscurePassword,
-                            isSubmitting: _isSubmitting,
-                            successMessage: _successMessage,
-                            errorMessage: _errorMessage,
-                            onTogglePassword: () {
-                              setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              );
-                            },
-                            onLogin: _login,
-                            onRegister: _openRegister,
-                          ),
+        backgroundColor: _loginNavy,
+        body: ClipRect(
+          child: ColoredBox(
+            color: _loginNavy,
+            child: Stack(
+              clipBehavior: Clip.hardEdge,
+              children: [
+                const Positioned.fill(child: _LoginBackdrop()),
+                SafeArea(
+                  child: SingleChildScrollView(
+                    clipBehavior: Clip.hardEdge,
+                    padding: const EdgeInsets.only(bottom: 18),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 500),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const SizedBox(height: 4),
+                            const _LoginHero(),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 22,
+                              ),
+                              child: _LoginPanel(
+                                usernameController: _usernameController,
+                                passwordController: _passwordController,
+                                obscurePassword: _obscurePassword,
+                                isSubmitting: _isSubmitting,
+                                successMessage: _successMessage,
+                                errorMessage: _errorMessage,
+                                onTogglePassword: () {
+                                  setState(
+                                    () => _obscurePassword = !_obscurePassword,
+                                  );
+                                },
+                                onLogin: _login,
+                                onRegister: _openRegister,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -192,17 +212,22 @@ class _LoginHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final heroHeight = (constraints.maxWidth * 0.82).clamp(294.0, 430.0);
+        final heroHeight = (constraints.maxWidth * 0.76).clamp(260.0, 410.0);
 
-        return SizedBox(
-          height: heroHeight,
-          child: Image.asset(
-            'assets/images/auth/eagle.png',
-            width: double.infinity,
-            height: double.infinity,
-            fit: BoxFit.cover,
-            alignment: Alignment.center,
-            filterQuality: FilterQuality.high,
+        return ColoredBox(
+          color: _loginNavy,
+          child: SizedBox(
+            height: heroHeight,
+            child: ClipRect(
+              child: Image.asset(
+                'assets/images/auth/eagle.png',
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                filterQuality: FilterQuality.high,
+              ),
+            ),
           ),
         );
       },
@@ -240,25 +265,18 @@ class _LoginPanel extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(24, 30, 24, 26),
+          padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFF102B49).withAlpha(226),
-                const Color(0xFF061B31).withAlpha(238),
+                const Color(0xFF0C2A43).withAlpha(238),
+                const Color(0xFF051D31).withAlpha(246),
               ],
             ),
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: const Color(0xFF6C86A9).withAlpha(72)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(118),
-                blurRadius: 42,
-                offset: const Offset(0, 22),
-              ),
-            ],
+            border: Border.all(color: const Color(0xFF5E7FA4).withAlpha(82)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -267,7 +285,7 @@ class _LoginPanel extends StatelessWidget {
                 'Log in to your account',
                 style: TextStyle(
                   color: AppColors.white,
-                  fontSize: 27,
+                  fontSize: 25,
                   height: 1.1,
                   fontWeight: FontWeight.w900,
                 ),
@@ -277,7 +295,7 @@ class _LoginPanel extends StatelessWidget {
                 'Nice to see you again! 👋',
                 style: TextStyle(
                   color: AppColors.alabaster,
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -285,7 +303,7 @@ class _LoginPanel extends StatelessWidget {
                 const SizedBox(height: 16),
                 _AuthMessage(message: successMessage!, color: AppColors.green),
               ],
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
               _LoginField(
                 keyValue: const Key('login_username'),
                 controller: usernameController,
@@ -297,7 +315,7 @@ class _LoginPanel extends StatelessWidget {
                 ],
                 textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               _LoginField(
                 keyValue: const Key('login_password'),
                 controller: passwordController,
@@ -344,14 +362,15 @@ class _LoginPanel extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               _LoginSubmitButton(
                 label: isSubmitting ? 'Logging in...' : 'Log in',
                 onPressed: () => onLogin(),
               ),
-              const SizedBox(height: 26),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              const SizedBox(height: 22),
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   const Text(
                     "Don't have an account?",
@@ -418,13 +437,13 @@ class _LoginField extends StatelessWidget {
     );
 
     return SizedBox(
-      height: 68,
+      height: 58,
       child: TextField(
         key: keyValue,
         controller: controller,
         style: const TextStyle(
           color: AppColors.white,
-          fontSize: 17,
+          fontSize: 15,
           fontWeight: FontWeight.w600,
         ),
         obscureText: obscureText,
@@ -434,12 +453,12 @@ class _LoginField extends StatelessWidget {
         onSubmitted: onSubmitted,
         decoration: InputDecoration(
           filled: true,
-          fillColor: const Color(0xFF0D253D).withAlpha(154),
+          fillColor: const Color(0xFF08263D).withAlpha(188),
           hintText: hintText,
           counterText: '',
           hintStyle: const TextStyle(
             color: Color(0xFF9EABC1),
-            fontSize: 17,
+            fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
           prefixIcon: Icon(icon, color: AppColors.orange, size: 26),
@@ -465,20 +484,13 @@ class _LoginSubmitButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 62,
+      height: 56,
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFFFFB21B), Color(0xFFFFA30A)],
           ),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.orange.withAlpha(54),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
         ),
         child: Material(
           color: Colors.transparent,
@@ -513,7 +525,7 @@ class _LoginBackdrop extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF061526), AppColors.midnight, Color(0xFF0B2339)],
+          colors: [_loginNavyTop, _loginNavy, _loginNavyBottom],
         ),
       ),
       child: CustomPaint(painter: _Clouds()),

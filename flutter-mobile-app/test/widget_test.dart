@@ -1,27 +1,41 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse_local_app/app/foodpulse_app.dart';
 import 'package:pulse_local_app/core/data/mock_foodpulse_data.dart';
 import 'package:pulse_local_app/core/models/restaurant.dart';
+import 'package:pulse_local_app/core/network/api_exception.dart';
+import 'package:pulse_local_app/features/auth/auth_api_service.dart';
 import 'package:pulse_local_app/features/checkout/repositories/foodpulse_checkout_risk_repository.dart';
 import 'package:pulse_local_app/features/checkout_risk/models/checkout_risk_request.dart';
 import 'package:pulse_local_app/features/checkout_risk/models/risk_prediction_response.dart';
 import 'package:pulse_local_app/features/foodpulse/models/foodpulse_order.dart';
 import 'package:pulse_local_app/features/foodpulse/repositories/foodpulse_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('starts on local login and rejects non-demo credentials', (
     tester,
   ) async {
-    await tester.pumpWidget(const FoodPulseApp());
+    await tester.pumpWidget(
+      FoodPulseApp(
+        authApiService: _StaticAuthApiService(
+          error: const ApiException('Invalid demo credentials.'),
+        ),
+      ),
+    );
 
-    expect(find.text('FoodPulse'), findsOneWidget);
+    expect(find.text('Log in to your account'), findsOneWidget);
     expect(find.text("Don't have an account?"), findsOneWidget);
     expect(find.text('Register'), findsOneWidget);
 
     await tester.enterText(find.byKey(const Key('login_username')), 'bad');
     await tester.enterText(find.byKey(const Key('login_password')), 'creds');
-    await tester.tap(find.text('Login'));
+    await tester.ensureVisible(find.text('Log in'));
+    await tester.tap(find.text('Log in'));
     await tester.pump();
 
     expect(find.text('Invalid demo credentials.'), findsOneWidget);
@@ -42,14 +56,15 @@ void main() {
               recommendation: 'Medium fulfillment risk. Keep ETA visible.',
             ),
           ),
-          child: const FoodPulseApp(),
+          child: FoodPulseApp(authApiService: _StaticAuthApiService()),
         ),
       ),
     );
 
     await tester.enterText(find.byKey(const Key('login_username')), 'user');
     await tester.enterText(find.byKey(const Key('login_password')), 'pass');
-    await tester.tap(find.text('Login'));
+    await tester.ensureVisible(find.text('Log in'));
+    await tester.tap(find.text('Log in'));
     await tester.pumpAndSettle();
 
     expect(find.text('Tacloban City, E. Visayas'), findsOneWidget);
@@ -60,7 +75,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Low fulfillment risk (28%) · ETA on track'),
+      find.text('Low fulfillment risk (28%) / ETA on track'),
       findsOneWidget,
     );
     expect(find.text('Pork Sinigang'), findsOneWidget);
@@ -91,6 +106,30 @@ void main() {
     expect(find.text('Order #FP-2024-9873'), findsOneWidget);
     expect(find.text('68% - adjusting ETA'), findsOneWidget);
   });
+}
+
+class _StaticAuthApiService extends AuthApiService {
+  _StaticAuthApiService({this.error});
+
+  final ApiException? error;
+
+  @override
+  Future<AuthUser> login({
+    required String username,
+    required String password,
+  }) async {
+    final error = this.error;
+    if (error != null) {
+      throw error;
+    }
+
+    return AuthUser(
+      username: username,
+      name: username,
+      email: '$username@foodpulse.local',
+      contactNumber: '09175550148',
+    );
+  }
 }
 
 class _StaticFoodPulseCheckoutRiskRepository

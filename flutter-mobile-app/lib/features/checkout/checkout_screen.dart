@@ -156,29 +156,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       prediction: _riskPrediction,
                       errorMessage: _riskErrorMessage,
                     ),
-                    const SizedBox(height: 10),
-                    const Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        FactorChip(
-                          label: 'High rider pressure',
-                          color: AppColors.tangerine,
-                        ),
-                        FactorChip(
-                          label: 'Moderate traffic',
-                          color: AppColors.orange,
-                        ),
-                        FactorChip(
-                          label: 'Merchant ready',
-                          color: AppColors.green,
-                        ),
-                        FactorChip(
-                          label: 'Rainy weather',
-                          color: AppColors.tangerine,
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -373,8 +350,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          _DeliveryAddressSheet(selectedAddress: _deliveryAddress),
+      builder: (_) => _DeliveryAddressSheet(selectedAddress: _deliveryAddress),
     );
 
     if (selected == null || !mounted) {
@@ -685,7 +661,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   String _friendlyRiskError(Object error) {
     if (error is ApiException) {
-      return error.message;
+      return 'Risk prediction is unavailable right now. You can still place your order.';
     }
 
     return 'Check the Laravel API connection and try again later.';
@@ -735,6 +711,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ? RiskColorMapper.labelForScore(prediction.riskPercent)
           : rawLevel,
       recommendation: prediction.recommendation,
+      advisoryMessage: prediction.advisoryMessage,
+      advisoryReasons: prediction.advisoryReasons,
     );
   }
 }
@@ -759,11 +737,23 @@ class _RiskSummary extends StatelessWidget {
         : errorMessage != null
         ? 'Risk service unavailable'
         : '${risk.label} fulfillment risk';
+    final isFallback =
+        prediction != null &&
+        (prediction!.source.toLowerCase() == 'laravel-fallback' ||
+            prediction!.riskLevel.toLowerCase() == 'unknown');
     final body = isLoading
         ? 'Laravel is calculating the checkout risk before order submission.'
         : errorMessage ??
-              prediction?.recommendation ??
-              'Proceed with standard checkout handling.';
+              (isFallback
+                  ? 'Fallback risk mode active. You can still place your order.'
+                  : prediction?.recommendation ??
+                        'Proceed with standard checkout handling.');
+    final delayReasons =
+        prediction?.advisoryReasons
+            .where((reason) => reason.isDelayReason)
+            .take(2)
+            .toList(growable: false) ??
+        const <RiskAdvisoryReason>[];
 
     return Container(
       width: double.infinity,
@@ -794,6 +784,30 @@ class _RiskSummary extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
+          if (prediction?.advisoryMessage.trim().isNotEmpty ?? false) ...[
+            const SizedBox(height: 8),
+            Text(
+              prediction!.advisoryMessage,
+              style: const TextStyle(
+                color: AppColors.alabaster,
+                fontSize: 11,
+                height: 1.45,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          for (final reason in delayReasons) ...[
+            const SizedBox(height: 6),
+            Text(
+              reason.label,
+              style: const TextStyle(
+                color: AppColors.silver,
+                fontSize: 11,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ],
       ),
     );
