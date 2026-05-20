@@ -78,6 +78,23 @@ class AdminDashboardTest extends TestCase
             ->assertDontSee('These controls require Super Admin access');
     }
 
+    public function test_dashboard_bootstraps_live_model_metadata_panel(): void
+    {
+        app(AdminUserSeeder::class)->run();
+
+        $this->post('/admin/login', [
+            'username' => 'admin',
+            'password' => 'admin123',
+        ])->assertRedirect('/admin/dashboard');
+
+        $this->get('/admin/dashboard?section=analytics')
+            ->assertOk()
+            ->assertSee('Trained Model Metadata')
+            ->assertSee('data-model-metadata-panel', false)
+            ->assertSee('api\\/admin\\/model-metadata', false)
+            ->assertSee('metadataEndpoint');
+    }
+
     public function test_logout_invalidates_admin_session(): void
     {
         app(AdminUserSeeder::class)->run();

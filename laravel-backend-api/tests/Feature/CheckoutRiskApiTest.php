@@ -49,7 +49,14 @@ class CheckoutRiskApiTest extends TestCase
 
         $this->assertSame(['success', 'source', 'data'], array_keys($response->json()));
         $this->assertSame(
-            ['risk_score', 'risk_level', 'recommendation', 'eta_range'],
+            [
+                'risk_score',
+                'risk_level',
+                'recommendation',
+                'eta_range',
+                'advisory_message',
+                'advisory_reasons',
+            ],
             array_keys($response->json('data'))
         );
 
@@ -171,6 +178,54 @@ class CheckoutRiskApiTest extends TestCase
                 ],
             ])
             ->assertJsonMissingPath('debug');
+    }
+
+    public function test_checkout_risk_response_keeps_original_fields_with_safe_advisory_metadata(): void
+    {
+        Carbon::setTestNow('2026-05-18 21:15:00');
+        config(['services.ml_service.url' => 'http://ml-service:8001']);
+
+        Http::fake([
+            'http://ml-service:8001/predict' => Http::response([
+                'risk_score' => 0.85,
+                'risk_level' => 'High',
+                'recommendation' => 'High fulfillment risk. Adjust ETA and notify merchant.',
+            ]),
+        ]);
+
+        $response = $this->postJson('/api/checkout/risk', [
+            ...$this->validPayload(),
+            'restaurant_slug' => 'chao-fan-house',
+            'total_quantity' => 5,
+            'delivery_address' => [
+                'label' => 'V&G Subdivision Extension',
+                'notes' => 'Near gate',
+            ],
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.risk_score', 0.85)
+            ->assertJsonPath('data.risk_level', 'High')
+            ->assertJsonPath('data.eta_range', '40-55 min')
+            ->assertJsonPath(
+                'data.advisory_message',
+                'Possible delay because of bad weather and heavy traffic.'
+            )
+            ->assertJsonMissingPath('data.model_features')
+            ->assertJsonMissingPath('data.feature_keys');
+
+        $this->assertSame(['success', 'source', 'data'], array_keys($response->json()));
+        $this->assertSame(
+            [
+                'risk_score',
+                'risk_level',
+                'recommendation',
+                'eta_range',
+                'advisory_message',
+                'advisory_reasons',
+            ],
+            array_keys($response->json('data'))
+        );
     }
 
     public function test_ml_service_client_posts_generated_model_features_to_configured_predict_endpoint(): void

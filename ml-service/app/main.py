@@ -1,4 +1,5 @@
 import json
+from json import JSONDecodeError
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from functools import lru_cache
@@ -7,8 +8,8 @@ from typing import Any, Literal
 
 import joblib
 import pandas as pd
-from fastapi import FastAPI
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app.config import settings
 
@@ -80,6 +81,45 @@ class PredictionResponse(BaseModel):
     source: Literal["ml-service"]
 
 
+class RiskThreshold(BaseModel):
+    min: float
+    max: float
+
+
+class RiskThresholds(BaseModel):
+    low: RiskThreshold
+    medium: RiskThreshold
+    high: RiskThreshold
+
+
+class TestMetrics(BaseModel):
+    accuracy: float
+    precision: float
+    recall: float
+    f1_score: float
+    roc_auc: float
+
+
+class CrossValidation(BaseModel):
+    method: str
+    n_splits: int
+    mean_roc_auc: float
+    std_roc_auc: float
+    scores: list[float]
+
+
+class ModelMetadataResponse(BaseModel):
+    model_name: str
+    model_type: str
+    target_column: str
+    features: list[str]
+    numeric_features: list[str]
+    categorical_features: list[str]
+    risk_thresholds: RiskThresholds
+    test_metrics: TestMetrics
+    cross_validation: CrossValidation
+
+
 @app.get("/")
 def service_status() -> dict[str, str]:
     return {
@@ -94,6 +134,28 @@ def health_check() -> dict[str, str]:
         "status": "ok",
         "service": "ml-service",
     }
+
+
+@app.get("/metadata", response_model=ModelMetadataResponse)
+def model_metadata() -> ModelMetadataResponse:
+    try:
+        return ModelMetadataResponse.model_validate(load_metadata())
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "model_metadata_unavailable",
+                "message": "Trained model metadata file is missing.",
+            },
+        ) from exc
+    except (JSONDecodeError, TypeError, ValidationError) as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "model_metadata_invalid",
+                "message": "Trained model metadata file is invalid.",
+            },
+        ) from exc
 
 
 @app.post("/predict", response_model=PredictionResponse)

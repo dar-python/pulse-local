@@ -144,7 +144,7 @@ void main() {
       find.text('Fallback risk mode active. You can still place your order.'),
       findsOneWidget,
     );
-    expect(find.textContaining('laravel-fallback'), findsOneWidget);
+    expect(find.textContaining('laravel-fallback'), findsNothing);
   });
 
   testWidgets('different restaurant carts trigger different risk payloads', (
@@ -240,6 +240,53 @@ void main() {
     expect(find.text('Order Confirmed!'), findsOneWidget);
   });
 
+  testWidgets('risk card shows only top delay reasons', (tester) async {
+    final repository = _FakeFoodPulseCheckoutRiskRepository(
+      onPredictRisk: (_) async => const RiskPredictionResponse(
+        success: true,
+        source: 'ml-service',
+        riskScore: 0.85,
+        riskLevel: 'High',
+        recommendation: 'High fulfillment risk. Adjust ETA.',
+        etaRange: '40-55 min',
+        advisoryMessage:
+            'Possible delay because of heavy traffic and bad weather.',
+        advisoryReasons: [
+          RiskAdvisoryReason(
+            code: 'heavy_traffic',
+            label: 'Heavy traffic may delay the rider.',
+          ),
+          RiskAdvisoryReason(
+            code: 'rainy_weather',
+            label: 'Bad weather may slow down delivery.',
+          ),
+          RiskAdvisoryReason(code: 'merchant_ready', label: 'Merchant ready.'),
+          RiskAdvisoryReason(
+            code: 'long_preparation',
+            label: 'This order may take longer to prepare.',
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CheckoutScreen(
+          checkoutRiskRepository: repository,
+          foodPulseRepository: const _StaticFoodPulseRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Heavy traffic may delay the rider.'), findsOneWidget);
+    expect(find.text('Bad weather may slow down delivery.'), findsOneWidget);
+    expect(find.text('Merchant ready.'), findsNothing);
+    expect(find.text('This order may take longer to prepare.'), findsNothing);
+    expect(find.text('High rider pressure'), findsNothing);
+    expect(find.text('Merchant ready'), findsNothing);
+  });
+
   testWidgets(
     'confirmation keeps checkout risk and eta when confirmation eta is default',
     (tester) async {
@@ -274,6 +321,56 @@ void main() {
       expect(find.text('68% - adjusting ETA'), findsOneWidget);
     },
   );
+
+  testWidgets('confirmation preserves simplified checkout advisory', (
+    tester,
+  ) async {
+    final repository = _FakeFoodPulseCheckoutRiskRepository(
+      onPredictRisk: (_) async => const RiskPredictionResponse(
+        success: true,
+        source: 'ml-service',
+        riskScore: 0.68,
+        riskLevel: 'Medium',
+        recommendation: 'Medium fulfillment risk. Show realistic ETA.',
+        etaRange: '30-40 min',
+        advisoryMessage:
+            'Possible delay because of moderate traffic and peak-hour timing.',
+        advisoryReasons: [
+          RiskAdvisoryReason(
+            code: 'medium_traffic',
+            label: 'Moderate traffic may slightly affect delivery time.',
+          ),
+          RiskAdvisoryReason(
+            code: 'peak_hour',
+            label: 'Peak-hour timing may affect delivery speed.',
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CheckoutScreen(
+          checkoutRiskRepository: repository,
+          foodPulseRepository: const _StaticFoodPulseRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final placeOrderButton = find.textContaining('Place Order');
+    await tester.ensureVisible(placeOrderButton);
+    await tester.tap(placeOrderButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Order Confirmed!'), findsOneWidget);
+    expect(
+      find.text(
+        'Possible delay because of moderate traffic and peak-hour timing.',
+      ),
+      findsOneWidget,
+    );
+  });
 }
 
 class _StaticFoodPulseRepository implements FoodPulseRepository {

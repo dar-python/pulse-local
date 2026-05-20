@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CheckoutRiskRequest;
+use App\Services\CheckoutRiskAdvisoryResolver;
 use App\Services\CheckoutEtaRangeResolver;
 use App\Services\CheckoutPredictionFeatureBuilder;
 use App\Services\MLServiceClient;
@@ -16,7 +17,8 @@ class CheckoutRiskController extends Controller
         CheckoutRiskRequest $request,
         CheckoutPredictionFeatureBuilder $featureBuilder,
         MLServiceClient $mlServiceClient,
-        CheckoutEtaRangeResolver $etaRangeResolver
+        CheckoutEtaRangeResolver $etaRangeResolver,
+        CheckoutRiskAdvisoryResolver $advisoryResolver
     ): JsonResponse
     {
         $modelFeatures = [];
@@ -25,6 +27,10 @@ class CheckoutRiskController extends Controller
             $modelFeatures = $featureBuilder->build($request->validated());
             $prediction = $mlServiceClient->calculateCheckoutRisk($modelFeatures);
             $prediction['eta_range'] = $etaRangeResolver->forPrediction($prediction);
+            $prediction = [
+                ...$prediction,
+                ...$advisoryResolver->forPrediction($prediction, $modelFeatures),
+            ];
 
             return response()->json([
                 'success' => true,
@@ -43,15 +49,21 @@ class CheckoutRiskController extends Controller
                 'feature_keys' => array_keys($modelFeatures),
             ]);
 
+            $fallbackPrediction = [
+                'risk_score' => round((float) config('services.checkout_risk.fallback_score'), 2),
+                'risk_level' => (string) config('services.checkout_risk.fallback_level'),
+                'recommendation' => (string) config('services.checkout_risk.fallback_recommendation'),
+                'eta_range' => '30-45 min',
+            ];
+            $fallbackPrediction = [
+                ...$fallbackPrediction,
+                ...$advisoryResolver->forPrediction($fallbackPrediction, $modelFeatures),
+            ];
+
             return response()->json([
                 'success' => true,
                 'source' => (string) config('services.checkout_risk.fallback_source'),
-                'data' => [
-                    'risk_score' => round((float) config('services.checkout_risk.fallback_score'), 2),
-                    'risk_level' => (string) config('services.checkout_risk.fallback_level'),
-                    'recommendation' => (string) config('services.checkout_risk.fallback_recommendation'),
-                    'eta_range' => '30-45 min',
-                ],
+                'data' => $fallbackPrediction,
             ]);
         }
     }

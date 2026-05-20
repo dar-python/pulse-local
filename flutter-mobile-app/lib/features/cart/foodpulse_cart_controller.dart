@@ -75,13 +75,23 @@ class FoodPulseCartController extends ChangeNotifier {
     notifyListeners();
   }
 
+<<<<<<< HEAD
   void decreaseItem(MenuItem item) {
     final current = _itemsById[item.id];
+=======
+  void increaseItem({required Restaurant restaurant, required MenuItem item}) {
+    addItem(restaurant: restaurant, item: item);
+  }
+
+  void decreaseItem(int itemId) {
+    final current = _itemsById[itemId];
+>>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
     if (current == null) {
       return;
     }
 
     if (current.quantity <= 1) {
+<<<<<<< HEAD
       _itemsById.remove(item.id);
     } else {
       _itemsById[item.id] = CartItem(
@@ -102,16 +112,38 @@ class FoodPulseCartController extends ChangeNotifier {
     }
 
     _itemsById.remove(item.id);
+=======
+      removeItem(itemId);
+      return;
+    }
+
+    _itemsById[itemId] = CartItem(
+      item: current.item,
+      quantity: current.quantity - 1,
+    );
+    notifyListeners();
+  }
+
+  void removeItem(int itemId) {
+    if (!_itemsById.containsKey(itemId)) {
+      return;
+    }
+
+    _itemsById.remove(itemId);
+>>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
     if (_itemsById.isEmpty) {
       _restaurant = null;
     }
     notifyListeners();
   }
 
+<<<<<<< HEAD
   int quantityForItem(MenuItem item) {
     return _itemsById[item.id]?.quantity ?? 0;
   }
 
+=======
+>>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
   void clear() {
     if (_itemsById.isEmpty && _restaurant == null) {
       return;
