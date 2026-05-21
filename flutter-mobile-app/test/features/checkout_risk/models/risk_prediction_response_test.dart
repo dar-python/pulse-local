@@ -53,4 +53,30 @@ void main() {
     expect(fractionalResponse.riskPercent, 72);
     expect(wholeNumberResponse.riskPercent, 72);
   });
+
+  test('parses returned checkout weather metadata', () {
+    final response = RiskPredictionResponse.fromJson({
+      'success': true,
+      'source': 'ml-service',
+      'data': {
+        'risk_score': 0.42,
+        'risk_level': 'Medium',
+        'weather': {
+          'category': 'clear',
+          'condition_text': 'Partly cloudy',
+          'condition_code': 1003,
+          'temperature_c': 30.2,
+          'precip_mm': 0,
+          'source': 'weatherapi',
+          'observed_at': '2026-05-21T10:30:00+08:00',
+          'latitude': 14.5995,
+          'longitude': 120.9842,
+        },
+      },
+    });
+
+    expect(response.weather?.category, 'clear');
+    expect(response.weather?.conditionText, 'Partly cloudy');
+    expect(response.weather?.source, 'weatherapi');
+  });
 }

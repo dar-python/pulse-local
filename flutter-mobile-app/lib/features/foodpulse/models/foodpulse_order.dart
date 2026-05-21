@@ -28,11 +28,15 @@ class FoodPulseDeliveryAddress {
     required this.label,
     this.notes,
     this.tag = 'Home',
+    this.latitude,
+    this.longitude,
   });
 
   final String label;
   final String? notes;
   final String tag;
+  final double? latitude;
+  final double? longitude;
 
   Map<String, dynamic> toJson() {
     return {

@@ -912,6 +912,10 @@ class _RiskSummary extends StatelessWidget {
               ),
             ),
           ],
+          if (prediction?.weather != null) ...[
+            const SizedBox(height: 8),
+            _WeatherLine(weather: prediction!.weather!),
+          ],
           for (final reason in delayReasons) ...[
             const SizedBox(height: 6),
             Text(
@@ -926,6 +930,52 @@ class _RiskSummary extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _WeatherLine extends StatelessWidget {
+  const _WeatherLine({required this.weather});
+
+  final RiskWeather weather;
+
+  @override
+  Widget build(BuildContext context) {
+    if (weather.isFallback) {
+      return const Text(
+        'Weather unavailable, using safe fallback.',
+        style: TextStyle(
+          color: AppColors.alabaster,
+          fontSize: 11,
+          height: 1.45,
+          fontWeight: FontWeight.w700,
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Current weather: ${weather.displayCategory}',
+          style: const TextStyle(
+            color: AppColors.alabaster,
+            fontSize: 11,
+            height: 1.45,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        if (weather.conditionText?.isNotEmpty ?? false)
+          Text(
+            'Condition: ${weather.conditionText}',
+            style: const TextStyle(
+              color: AppColors.silver,
+              fontSize: 11,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+      ],
     );
   }
 }

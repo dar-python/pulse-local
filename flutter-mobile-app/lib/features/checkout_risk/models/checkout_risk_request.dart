@@ -62,10 +62,11 @@ class CheckoutRiskRequest {
     this.paymentMethod = 'cod',
     this.subtotal = 185,
     this.totalQuantity = 1,
+    this.deliveryLatitude,
+    this.deliveryLongitude,
     this.riderToOrderRatio = 0.45,
     this.merchantPrepTime = 25,
     this.trafficCorridorIntensity = 'high',
-    this.weatherCategory = 'rainy',
     this.deliveryDistanceKm = 4.2,
     this.addressComplexity = 'medium',
   });
@@ -99,6 +100,8 @@ class CheckoutRiskRequest {
       paymentMethod: paymentMethod,
       subtotal: items.fold(0, (sum, item) => sum + item.lineTotal),
       totalQuantity: items.fold(0, (sum, item) => sum + item.quantity),
+      deliveryLatitude: deliveryAddress.latitude ?? restaurant.latitude,
+      deliveryLongitude: deliveryAddress.longitude ?? restaurant.longitude,
     );
   }
 
@@ -109,12 +112,13 @@ class CheckoutRiskRequest {
   final String paymentMethod;
   final int subtotal;
   final int totalQuantity;
+  final double? deliveryLatitude;
+  final double? deliveryLongitude;
 
   // Legacy fields retained for the older standalone risk demo controller.
   final double riderToOrderRatio;
   final int merchantPrepTime;
   final String trafficCorridorIntensity;
-  final String weatherCategory;
   final double deliveryDistanceKm;
   final String addressComplexity;
 
@@ -127,6 +131,8 @@ class CheckoutRiskRequest {
       'payment_method': paymentMethod,
       'subtotal': subtotal,
       'total_quantity': totalQuantity,
+      if (deliveryLatitude != null) 'delivery_latitude': deliveryLatitude,
+      if (deliveryLongitude != null) 'delivery_longitude': deliveryLongitude,
     };
   }
 

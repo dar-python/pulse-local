@@ -7,6 +7,7 @@ use App\Services\CheckoutRiskAdvisoryResolver;
 use App\Services\CheckoutEtaRangeResolver;
 use App\Services\CheckoutPredictionFeatureBuilder;
 use App\Services\MLServiceClient;
+use App\Services\Weather\WeatherServiceInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -18,18 +19,23 @@ class CheckoutRiskController extends Controller
         CheckoutPredictionFeatureBuilder $featureBuilder,
         MLServiceClient $mlServiceClient,
         CheckoutEtaRangeResolver $etaRangeResolver,
-        CheckoutRiskAdvisoryResolver $advisoryResolver
+        CheckoutRiskAdvisoryResolver $advisoryResolver,
+        WeatherServiceInterface $weatherService
     ): JsonResponse
     {
         $modelFeatures = [];
+        $weather = null;
+        $checkoutContext = $request->validated();
 
         try {
-            $modelFeatures = $featureBuilder->build($request->validated());
+            $weather = $weatherService->currentForCheckout($checkoutContext);
+            $modelFeatures = $featureBuilder->build($checkoutContext, $weather->category);
             $prediction = $mlServiceClient->calculateCheckoutRisk($modelFeatures);
             $prediction['eta_range'] = $etaRangeResolver->forPrediction($prediction);
             $prediction = [
                 ...$prediction,
                 ...$advisoryResolver->forPrediction($prediction, $modelFeatures),
+                'weather' => $weather->toArray(),
             ];
 
             return response()->json([
@@ -58,6 +64,7 @@ class CheckoutRiskController extends Controller
             $fallbackPrediction = [
                 ...$fallbackPrediction,
                 ...$advisoryResolver->forPrediction($fallbackPrediction, $modelFeatures),
+                'weather' => $weather?->toArray(),
             ];
 
             return response()->json([

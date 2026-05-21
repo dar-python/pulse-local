@@ -52,6 +52,11 @@ void main() {
         riskLevel: 'Medium',
         recommendation: 'Medium fulfillment risk. Keep ETA visible.',
         etaRange: '30-40 min',
+        weather: RiskWeather(
+          category: 'clear',
+          conditionText: 'Partly cloudy',
+          source: 'weatherapi',
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -72,6 +77,8 @@ void main() {
       'payment_method': 'gcash',
       'subtotal': 149,
       'total_quantity': 1,
+      'delivery_latitude': 11.2442,
+      'delivery_longitude': 125.003,
     });
     expect(find.text('68%'), findsOneWidget);
     expect(find.text('MEDIUM RISK'), findsWidgets);
@@ -79,6 +86,8 @@ void main() {
       find.text('Medium fulfillment risk. Keep ETA visible.'),
       findsWidgets,
     );
+    expect(find.text('Current weather: Clear'), findsOneWidget);
+    expect(find.text('Condition: Partly cloudy'), findsOneWidget);
   });
 
   testWidgets('normalizes whole-number Laravel scores and displays high risk', (
@@ -145,6 +154,39 @@ void main() {
       findsWidgets,
     );
     expect(find.textContaining('laravel-fallback'), findsNothing);
+  });
+
+  testWidgets('displays fallback weather message from Laravel', (tester) async {
+    final repository = _FakeFoodPulseCheckoutRiskRepository(
+      onPredictRisk: (_) async => const RiskPredictionResponse(
+        success: true,
+        source: 'ml-service',
+        riskScore: 0.42,
+        riskLevel: 'Medium',
+        recommendation: 'Medium fulfillment risk. Show ETA.',
+        etaRange: '30-40 min',
+        weather: RiskWeather(
+          category: 'clear',
+          conditionText: 'Weather unavailable',
+          source: 'fallback',
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CheckoutScreen(
+          checkoutRiskRepository: repository,
+          foodPulseRepository: const _StaticFoodPulseRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Weather unavailable, using safe fallback.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('different restaurant carts trigger different risk payloads', (

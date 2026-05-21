@@ -19,6 +19,8 @@ class FoodPulseLocalData
                 'minimum_order' => 99,
                 'emoji' => $this->emoji('\ud83c\udf56'),
                 'risk_score' => 28,
+                'latitude' => 11.2449,
+                'longitude' => 125.0047,
             ],
             [
                 'id' => 2,
@@ -30,6 +32,8 @@ class FoodPulseLocalData
                 'minimum_order' => 79,
                 'emoji' => $this->emoji('\ud83c\udf57'),
                 'risk_score' => 62,
+                'latitude' => 11.2442,
+                'longitude' => 125.003,
             ],
             [
                 'id' => 3,
@@ -41,6 +45,8 @@ class FoodPulseLocalData
                 'minimum_order' => 89,
                 'emoji' => $this->emoji('\ud83c\udf5c'),
                 'risk_score' => 81,
+                'latitude' => 11.2408,
+                'longitude' => 125.0061,
             ],
         ];
     }

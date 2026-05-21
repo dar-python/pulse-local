@@ -14,6 +14,8 @@ class Restaurant {
     required this.riskScore,
     this.branchAddress,
     this.imageAsset,
+    this.latitude,
+    this.longitude,
   });
 
   final int id;
@@ -28,6 +30,8 @@ class Restaurant {
   final int riskScore;
   final String? branchAddress;
   final String? imageAsset;
+  final double? latitude;
+  final double? longitude;
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
     final id = (json['id'] as num).toInt();
@@ -66,6 +70,8 @@ class Restaurant {
             name: name,
             slug: _stringOrNull(json['slug']),
           ),
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
     );
   }
 }

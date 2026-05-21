@@ -5,6 +5,9 @@ class CheckoutRiskResult {
     required this.recommendation,
     required this.source,
     this.etaRange = '30-45 min',
+    this.weatherCategory,
+    this.weatherCondition,
+    this.weatherSource,
   });
 
   final double riskScore;
@@ -12,4 +15,7 @@ class CheckoutRiskResult {
   final String recommendation;
   final String source;
   final String etaRange;
+  final String? weatherCategory;
+  final String? weatherCondition;
+  final String? weatherSource;
 }

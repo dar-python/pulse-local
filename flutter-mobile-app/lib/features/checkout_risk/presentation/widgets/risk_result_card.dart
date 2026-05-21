@@ -48,6 +48,18 @@ class RiskResultCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(result.recommendation),
+            if (result.weatherCategory != null) ...[
+              const SizedBox(height: 8),
+              if (result.weatherSource?.toLowerCase() == 'fallback')
+                const Text('Weather unavailable, using safe fallback.')
+              else ...[
+                Text(
+                  'Current weather: ${_titleCase(result.weatherCategory!)}',
+                ),
+                if (result.weatherCondition?.isNotEmpty ?? false)
+                  Text('Condition: ${result.weatherCondition}'),
+              ],
+            ],
             const SizedBox(height: 12),
             Text(
               'Source: ${result.source}',
@@ -86,4 +98,13 @@ class RiskResultCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _titleCase(String value) {
+  final normalized = value.trim().toLowerCase();
+  if (normalized.isEmpty) {
+    return 'Unknown';
+  }
+
+  return normalized[0].toUpperCase() + normalized.substring(1);
 }

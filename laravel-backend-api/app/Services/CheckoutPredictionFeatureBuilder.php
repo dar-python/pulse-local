@@ -10,7 +10,6 @@ class CheckoutPredictionFeatureBuilder
         'tambayan-grill' => [
             'base_distance_km' => 4.2,
             'base_prep_time' => 25,
-            'weather' => 'rainy',
             'traffic' => 'medium',
             'vehicle_type' => 'motorcycle',
             'courier_experience_yrs' => 2.0,
@@ -18,7 +17,6 @@ class CheckoutPredictionFeatureBuilder
         'jollibee-express' => [
             'base_distance_km' => 2.8,
             'base_prep_time' => 15,
-            'weather' => 'clear',
             'traffic' => 'low',
             'vehicle_type' => 'motorcycle',
             'courier_experience_yrs' => 3.5,
@@ -26,7 +24,6 @@ class CheckoutPredictionFeatureBuilder
         'chao-fan-house' => [
             'base_distance_km' => 5.8,
             'base_prep_time' => 30,
-            'weather' => 'stormy',
             'traffic' => 'high',
             'vehicle_type' => 'motorcycle',
             'courier_experience_yrs' => 1.0,
@@ -35,7 +32,7 @@ class CheckoutPredictionFeatureBuilder
 
     public function __construct(private readonly FoodPulseLocalData $foodPulseData) {}
 
-    public function build(array $checkoutContext): array
+    public function build(array $checkoutContext, string $weatherCategory = 'clear'): array
     {
         $profile = $this->profileFor($checkoutContext);
         $items = $checkoutContext['items'] ?? [];
@@ -48,7 +45,7 @@ class CheckoutPredictionFeatureBuilder
 
         return [
             'Distance_km' => round($distance, 1),
-            'Weather' => $profile['weather'],
+            'Weather' => $this->normalizeWeatherCategory($weatherCategory),
             'Traffic_Level' => $profile['traffic'],
             'Time_of_Day' => $this->timeOfDay(),
             'Vehicle_Type' => $profile['vehicle_type'],
@@ -142,6 +139,15 @@ class CheckoutPredictionFeatureBuilder
         }
 
         return 0.0;
+    }
+
+    private function normalizeWeatherCategory(string $weatherCategory): string
+    {
+        $category = Str::lower(trim($weatherCategory));
+
+        return in_array($category, ['clear', 'rainy', 'stormy'], true)
+            ? $category
+            : 'clear';
     }
 
     private function timeOfDay(): string

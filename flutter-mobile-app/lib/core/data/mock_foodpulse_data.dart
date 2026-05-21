@@ -39,6 +39,8 @@ class MockFoodPulseData {
       riskScore: 28,
       imageAsset: FoodPulseImageAssets.tambayanGrill,
       branchAddress: 'Real St, Downtown Tacloban',
+      latitude: 11.2449,
+      longitude: 125.0047,
     ),
     Restaurant(
       id: 2,
@@ -53,6 +55,8 @@ class MockFoodPulseData {
       riskScore: 62,
       imageAsset: FoodPulseImageAssets.jollibeeExpress,
       branchAddress: 'Justice Romualdez St, Tacloban City',
+      latitude: 11.2442,
+      longitude: 125.003,
     ),
     Restaurant(
       id: 3,
@@ -67,6 +71,8 @@ class MockFoodPulseData {
       riskScore: 54,
       imageAsset: FoodPulseImageAssets.chaoFanHouse,
       branchAddress: 'Robinsons North Tacloban',
+      latitude: 11.2408,
+      longitude: 125.0061,
     ),
     Restaurant(
       id: 4,
@@ -81,6 +87,8 @@ class MockFoodPulseData {
       riskScore: 81,
       imageAsset: FoodPulseImageAssets.chaoFanHouse,
       branchAddress: 'Zamora St, Tacloban City',
+      latitude: 11.2445,
+      longitude: 125.0037,
     ),
     Restaurant(
       id: 5,
@@ -95,6 +103,8 @@ class MockFoodPulseData {
       riskScore: 44,
       imageAsset: FoodPulseImageAssets.tambayanGrill,
       branchAddress: 'P. Burgos St, Tacloban City',
+      latitude: 11.2454,
+      longitude: 125.0025,
     ),
     Restaurant(
       id: 6,
@@ -109,6 +119,8 @@ class MockFoodPulseData {
       riskScore: 36,
       imageAsset: FoodPulseImageAssets.jollibeeExpress,
       branchAddress: 'Rizal Ave, Tacloban City',
+      latitude: 11.244,
+      longitude: 125.0041,
     ),
   ];
 

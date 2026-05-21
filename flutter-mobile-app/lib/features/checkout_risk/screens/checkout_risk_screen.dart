@@ -24,7 +24,6 @@ class _CheckoutRiskScreenState extends State<CheckoutRiskScreen> {
 
   late final CheckoutRiskApiService _apiService;
   String _trafficCorridorIntensity = 'high';
-  String _weatherCategory = 'rainy';
   String _addressComplexity = 'medium';
   String _paymentMethod = 'cod';
   bool _isLoading = false;
@@ -114,15 +113,6 @@ class _CheckoutRiskScreenState extends State<CheckoutRiskScreen> {
             },
           ),
           const SizedBox(height: 12),
-          _DropdownField(
-            label: 'Weather category',
-            value: _weatherCategory,
-            values: const ['clear', 'rainy', 'stormy'],
-            onChanged: (value) {
-              setState(() => _weatherCategory = value);
-            },
-          ),
-          const SizedBox(height: 12),
           TextFormField(
             controller: _distanceController,
             decoration: const InputDecoration(
@@ -176,7 +166,6 @@ class _CheckoutRiskScreenState extends State<CheckoutRiskScreen> {
       riderToOrderRatio: double.parse(_riderRatioController.text.trim()),
       merchantPrepTime: int.parse(_merchantPrepController.text.trim()),
       trafficCorridorIntensity: _trafficCorridorIntensity,
-      weatherCategory: _weatherCategory,
       deliveryDistanceKm: double.parse(_distanceController.text.trim()),
       addressComplexity: _addressComplexity,
       paymentMethod: _paymentMethod,
@@ -298,6 +287,18 @@ class _RiskPredictionCard extends StatelessWidget {
             Text('Risk Score: $riskPercent%'),
             const SizedBox(height: 8),
             Text(prediction.recommendation),
+            if (prediction.weather != null) ...[
+              const SizedBox(height: 8),
+              if (prediction.weather!.isFallback)
+                const Text('Weather unavailable, using safe fallback.')
+              else ...[
+                Text(
+                  'Current weather: ${prediction.weather!.displayCategory}',
+                ),
+                if (prediction.weather!.conditionText?.isNotEmpty ?? false)
+                  Text('Condition: ${prediction.weather!.conditionText}'),
+              ],
+            ],
             const SizedBox(height: 12),
             Text(
               'Source: ${prediction.source}',

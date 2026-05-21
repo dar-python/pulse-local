@@ -32,6 +32,15 @@ return [
         'timeout' => (int) env('ML_SERVICE_TIMEOUT_SECONDS', 2),
     ],
 
+    'weatherapi' => [
+        'base_url' => env('WEATHERAPI_BASE_URL', 'https://api.weatherapi.com/v1'),
+        'key' => env('WEATHERAPI_KEY'),
+        'timeout_seconds' => (int) env('WEATHERAPI_TIMEOUT_SECONDS', 2),
+        'cache_ttl_seconds' => (int) env('WEATHERAPI_CACHE_TTL_SECONDS', 600),
+        'default_latitude' => (float) env('DEFAULT_WEATHER_LATITUDE', 14.5995),
+        'default_longitude' => (float) env('DEFAULT_WEATHER_LONGITUDE', 120.9842),
+    ],
+
     'checkout_risk' => [
         'fallback_score' => (float) env('CHECKOUT_RISK_FALLBACK_SCORE', 0.50),
         'fallback_level' => env('CHECKOUT_RISK_FALLBACK_LEVEL', 'Unknown'),
