@@ -1,0 +1,116 @@
+name: Deploy FoodPulse to EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  LARAVEL_API_IMAGE: ghcr.io/dar-python/food-pulse-laravel-api
+  ML_SERVICE_IMAGE: ghcr.io/dar-python/food-pulse-ml-service
+  LARAVEL_NGINX_IMAGE: ghcr.io/dar-python/food-pulse-laravel-nginx
+
+jobs:
+  build-and-deploy:
+    name: Build GHCR images and deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR for push
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Laravel API image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./laravel-backend-api
+          file: ./laravel-backend-api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.LARAVEL_API_IMAGE }}:latest
+            ${{ env.LARAVEL_API_IMAGE }}:${{ github.sha }}
+
+      - name: Build and push ML service image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./ml-service
+          file: ./ml-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ML_SERVICE_IMAGE }}:latest
+            ${{ env.ML_SERVICE_IMAGE }}:${{ github.sha }}
+
+      - name: Build and push Laravel nginx image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./laravel-backend-api
+          file: ./laravel-backend-api/docker/nginx/Dockerfile
+          push: true
+          tags: |
+            ${{ env.LARAVEL_NGINX_IMAGE }}:latest
+            ${{ env.LARAVEL_NGINX_IMAGE }}:${{ github.sha }}
+
+      - name: Configure SSH
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$EC2_SSH_PRIVATE_KEY" > ~/.ssh/foodpulse_ec2
+          chmod 600 ~/.ssh/foodpulse_ec2
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+
+      - name: Copy production Compose file to EC2
+        env:
+          APP_DIR: ${{ vars.APP_DIR }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+        run: |
+          set -euo pipefail
+          : "${APP_DIR:?APP_DIR repository variable is required}"
+          ssh -i ~/.ssh/foodpulse_ec2 "$EC2_USER@$EC2_HOST" "mkdir -p '$APP_DIR'"
+          scp -i ~/.ssh/foodpulse_ec2 docker-compose.prod.yml "$EC2_USER@$EC2_HOST:$APP_DIR/docker-compose.prod.yml"
+
+      - name: Deploy pull-only stack on EC2
+        env:
+          APP_DIR: ${{ vars.APP_DIR }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          : "${APP_DIR:?APP_DIR repository variable is required}"
+          : "${GHCR_USERNAME:?GHCR_USERNAME secret is required}"
+          : "${GHCR_PAT:?GHCR_PAT secret is required}"
+          printf '%s' "$GHCR_PAT" | ssh -i ~/.ssh/foodpulse_ec2 "$EC2_USER@$EC2_HOST" "docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin"
+          ssh -i ~/.ssh/foodpulse_ec2 "$EC2_USER@$EC2_HOST" "APP_DIR='$APP_DIR' IMAGE_TAG='$IMAGE_TAG' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$APP_DIR"
+
+          test -f laravel-backend-api/.env || { echo "Missing laravel-backend-api/.env on EC2"; exit 1; }
+          test -f .env.mysql || { echo "Missing .env.mysql on EC2"; exit 1; }
+
+          docker compose -f docker-compose.prod.yml pull
+          docker compose -f docker-compose.prod.yml up -d --remove-orphans
+          docker compose -f docker-compose.prod.yml exec -T laravel-api php artisan migrate --force
+          docker compose -f docker-compose.prod.yml exec -T laravel-api php artisan config:cache
+          docker compose -f docker-compose.prod.yml exec -T laravel-api php artisan route:cache
+          docker image prune -f
+          REMOTE

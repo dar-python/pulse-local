@@ -1,7 +1,13 @@
 .env
 .env.*
 !.env.example
+!.env.mysql.example
 docs/
+!docs/
+docs/*
+!docs/deployment/
+docs/deployment/*
+!docs/deployment/ec2-ghcr-duckdns.md
 EC2/
 .venv/
 venv/
