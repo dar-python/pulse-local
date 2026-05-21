@@ -75,33 +75,34 @@ class FoodPulseCartController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void decreaseItem(MenuItem item) {
-    final current = _itemsById[item.id];
+  void increaseItem({required Restaurant restaurant, required MenuItem item}) {
+    addItem(restaurant: restaurant, item: item);
+  }
+
+  void decreaseItem(int itemId) {
+    final current = _itemsById[itemId];
     if (current == null) {
       return;
     }
 
     if (current.quantity <= 1) {
-      _itemsById.remove(item.id);
-    } else {
-      _itemsById[item.id] = CartItem(
-        item: item,
-        quantity: current.quantity - 1,
-      );
-    }
-
-    if (_itemsById.isEmpty) {
-      _restaurant = null;
-    }
-    notifyListeners();
-  }
-
-  void removeItem(MenuItem item) {
-    if (!_itemsById.containsKey(item.id)) {
+      removeItem(itemId);
       return;
     }
 
-    _itemsById.remove(item.id);
+    _itemsById[itemId] = CartItem(
+      item: current.item,
+      quantity: current.quantity - 1,
+    );
+    notifyListeners();
+  }
+
+  void removeItem(int itemId) {
+    if (!_itemsById.containsKey(itemId)) {
+      return;
+    }
+
+    _itemsById.remove(itemId);
     if (_itemsById.isEmpty) {
       _restaurant = null;
     }

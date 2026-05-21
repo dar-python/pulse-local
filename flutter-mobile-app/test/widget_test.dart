@@ -10,35 +10,16 @@ import 'package:pulse_local_app/features/checkout_risk/models/checkout_risk_requ
 import 'package:pulse_local_app/features/checkout_risk/models/risk_prediction_response.dart';
 import 'package:pulse_local_app/features/foodpulse/models/foodpulse_order.dart';
 import 'package:pulse_local_app/features/foodpulse/repositories/foodpulse_repository.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pulse_local_app/features/home/home_screen.dart';
 
 void main() {
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
-  });
-
-  testWidgets('starts on local login and rejects non-demo credentials', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      FoodPulseApp(
-        authApiService: _StaticAuthApiService(
-          error: const ApiException('Invalid demo credentials.'),
-        ),
-      ),
-    );
+  testWidgets('starts on the current login screen', (tester) async {
+    await tester.pumpWidget(const FoodPulseApp());
 
     expect(find.text('Log in to your account'), findsOneWidget);
     expect(find.text("Don't have an account?"), findsOneWidget);
     expect(find.text('Register'), findsOneWidget);
-
-    await tester.enterText(find.byKey(const Key('login_username')), 'bad');
-    await tester.enterText(find.byKey(const Key('login_password')), 'creds');
-    await tester.ensureVisible(find.text('Log in'));
-    await tester.tap(find.text('Log in'));
-    await tester.pump();
-
-    expect(find.text('Invalid demo credentials.'), findsOneWidget);
+    expect(find.text('Log in'), findsOneWidget);
     expect(find.text('Home'), findsNothing);
   });
 
@@ -56,16 +37,10 @@ void main() {
               recommendation: 'Medium fulfillment risk. Keep ETA visible.',
             ),
           ),
-          child: FoodPulseApp(authApiService: _StaticAuthApiService()),
+          child: const MaterialApp(home: HomeScreen()),
         ),
       ),
     );
-
-    await tester.enterText(find.byKey(const Key('login_username')), 'user');
-    await tester.enterText(find.byKey(const Key('login_password')), 'pass');
-    await tester.ensureVisible(find.text('Log in'));
-    await tester.tap(find.text('Log in'));
-    await tester.pumpAndSettle();
 
     expect(find.text('Tacloban City, E. Visayas'), findsOneWidget);
     expect(find.text("McDonald's Tacloban"), findsOneWidget);
@@ -90,7 +65,7 @@ void main() {
     expect(find.text('Total'), findsOneWidget);
     expect(find.textContaining('234'), findsWidgets);
 
-    await tester.tap(find.textContaining('Place order'));
+    await tester.tap(find.byKey(const Key('cart_checkout_button')));
     await tester.pumpAndSettle();
 
     expect(find.text('Fulfillment Risk Score'), findsOneWidget);

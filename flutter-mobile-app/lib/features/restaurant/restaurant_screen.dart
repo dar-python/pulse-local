@@ -276,8 +276,9 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                           visibleItems[index],
                         ),
                         onAdd: () => _addMenuItem(visibleItems[index]),
-                        onRemove: () =>
-                            _cartController.decreaseItem(visibleItems[index]),
+                        onRemove: () => _cartController.decreaseItem(
+                          visibleItems[index].id,
+                        ),
                       ),
                       separatorBuilder: (_, _) => Divider(
                         color: AppColors.white.withAlpha(14),

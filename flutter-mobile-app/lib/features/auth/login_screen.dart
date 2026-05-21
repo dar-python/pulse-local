@@ -367,7 +367,7 @@ class _LoginPanel extends StatelessWidget {
                 label: isSubmitting ? 'Logging in...' : 'Log in',
                 onPressed: () => onLogin(),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 26),
               Wrap(
                 alignment: WrapAlignment.center,
                 crossAxisAlignment: WrapCrossAlignment.center,
