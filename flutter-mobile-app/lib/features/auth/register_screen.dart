@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/network/api_exception.dart';
-import '../../shared/widgets/foodpulse_logo.dart';
-import '../../shared/widgets/primary_button.dart';
+import '../../core/theme/app_colors.dart';
 import 'auth_api_service.dart';
 import 'demo_account.dart';
 import 'login_screen.dart';
+
+const _registerNavy = Color(0xFF061A2F);
+const _registerNavyTop = Color(0xFF051428);
+const _registerNavyBottom = Color(0xFF071E38);
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -75,14 +77,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (!DemoAccount.contactNumberPattern.hasMatch(contactNumber)) {
-      setState(() => _errorMessage = 'Contact number must contain digits only.');
+      setState(
+        () => _errorMessage = 'Contact number must contain digits only.',
+      );
       return;
     }
 
     if (contactNumber.length > DemoAccount.maxContactNumberLength) {
-      setState(
-        () => _errorMessage = 'Contact number cannot exceed 11 digits.',
-      );
+      setState(() => _errorMessage = 'Contact number cannot exceed 11 digits.');
       return;
     }
 
@@ -105,9 +107,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (password.length < 6) {
-      setState(
-        () => _errorMessage = 'Password must be at least 6 characters.',
-      );
+      setState(() => _errorMessage = 'Password must be at least 6 characters.');
       return;
     }
 
@@ -159,174 +159,332 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  void _openLogin() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.prussian,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const FoodPulseLogo(),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'Create Account',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Create your FoodPulse account to order, track riders, and manage checkout preferences.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.silver,
-                      fontSize: 13,
-                      height: 1.45,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  TextField(
-                    key: const Key('register_username'),
-                    controller: _usernameController,
-                    style: const TextStyle(color: AppColors.white),
-                    maxLength: DemoAccount.maxUsernameLength,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                        RegExp(r'[A-Za-z0-9._-]'),
-                      ),
-                    ],
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      counterText: '',
-                      prefixIcon: Icon(Icons.person_outline_rounded),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    key: const Key('register_email'),
-                    controller: _emailController,
-                    style: const TextStyle(color: AppColors.white),
-                    keyboardType: TextInputType.emailAddress,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                        RegExp(r'[A-Za-z0-9@._-]'),
-                      ),
-                    ],
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Email address',
-                      prefixIcon: Icon(Icons.mail_outline_rounded),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    key: const Key('register_contact_number'),
-                    controller: _contactController,
-                    style: const TextStyle(color: AppColors.white),
-                    keyboardType: TextInputType.phone,
-                    maxLength: DemoAccount.maxContactNumberLength,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Contact number',
-                      counterText: '',
-                      prefixIcon: Icon(Icons.phone_outlined),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    key: const Key('register_password'),
-                    controller: _passwordController,
-                    style: const TextStyle(color: AppColors.white),
-                    obscureText: true,
-                    maxLength: DemoAccount.maxPasswordLength,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                        RegExp(r'[A-Za-z0-9!@#$%^&*._-]'),
-                      ),
-                    ],
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      counterText: '',
-                      prefixIcon: Icon(Icons.lock_outline_rounded),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    key: const Key('register_confirm_password'),
-                    controller: _confirmPasswordController,
-                    style: const TextStyle(color: AppColors.white),
-                    obscureText: true,
-                    maxLength: DemoAccount.maxPasswordLength,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                        RegExp(r'[A-Za-z0-9!@#$%^&*._-]'),
-                      ),
-                    ],
-                    onSubmitted: (_) => _register(),
-                    decoration: const InputDecoration(
-                      labelText: 'Confirm password',
-                      counterText: '',
-                      prefixIcon: Icon(Icons.verified_user_outlined),
-                    ),
-                  ),
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: 12),
-                    _AuthMessage(
-                      message: _errorMessage!,
-                      color: AppColors.tangerine,
-                    ),
-                  ],
-                  const SizedBox(height: 18),
-                  PrimaryButton(
-                    label: _isSubmitting ? 'Creating Account...' : 'Register',
-                    onPressed: _register,
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Already have an account?',
-                        style: TextStyle(
-                          color: AppColors.silver,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pushReplacement(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const LoginScreen(),
-                          ),
-                        ),
-                        child: const Text(
-                          'Login',
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemStatusBarContrastEnforced: false,
+        systemNavigationBarColor: _registerNavy,
+        systemNavigationBarDividerColor: _registerNavy,
+        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarContrastEnforced: false,
+      ),
+      child: Scaffold(
+        backgroundColor: _registerNavy,
+        body: ClipRect(
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [_registerNavyTop, _registerNavy, _registerNavyBottom],
+              ),
+            ),
+            child: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  clipBehavior: Clip.hardEdge,
+                  padding: const EdgeInsets.fromLTRB(24, 26, 24, 18),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 430),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const _RegisterBrand(),
+                        const SizedBox(height: 26),
+                        const Text(
+                          'Create Account',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: AppColors.orange,
-                            fontSize: 12,
+                            color: AppColors.white,
+                            fontSize: 25,
+                            height: 1.1,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            'Create your FoodPulse account to order, track riders, and manage checkout preferences.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xFFAAB8CA),
+                              fontSize: 14,
+                              height: 1.45,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        _RegisterField(
+                          key: const Key('register_username'),
+                          controller: _usernameController,
+                          hintText: 'Username',
+                          icon: Icons.person_outline_rounded,
+                          maxLength: DemoAccount.maxUsernameLength,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[A-Za-z0-9._-]'),
+                            ),
+                          ],
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 14),
+                        _RegisterField(
+                          key: const Key('register_email'),
+                          controller: _emailController,
+                          hintText: 'Email address',
+                          icon: Icons.mail_outline_rounded,
+                          keyboardType: TextInputType.emailAddress,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[A-Za-z0-9@._-]'),
+                            ),
+                          ],
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 14),
+                        _RegisterField(
+                          key: const Key('register_contact_number'),
+                          controller: _contactController,
+                          hintText: 'Contact number',
+                          icon: Icons.phone_outlined,
+                          keyboardType: TextInputType.phone,
+                          maxLength: DemoAccount.maxContactNumberLength,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 14),
+                        _RegisterField(
+                          key: const Key('register_password'),
+                          controller: _passwordController,
+                          hintText: 'Password',
+                          icon: Icons.lock_outline_rounded,
+                          obscureText: true,
+                          maxLength: DemoAccount.maxPasswordLength,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[A-Za-z0-9!@#$%^&*._-]'),
+                            ),
+                          ],
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 14),
+                        _RegisterField(
+                          key: const Key('register_confirm_password'),
+                          controller: _confirmPasswordController,
+                          hintText: 'Confirm password',
+                          icon: Icons.verified_user_outlined,
+                          obscureText: true,
+                          maxLength: DemoAccount.maxPasswordLength,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[A-Za-z0-9!@#$%^&*._-]'),
+                            ),
+                          ],
+                          onSubmitted: (_) => _register(),
+                        ),
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 14),
+                          _AuthMessage(
+                            message: _errorMessage!,
+                            color: AppColors.tangerine,
+                          ),
+                        ],
+                        const SizedBox(height: 20),
+                        _RegisterSubmitButton(
+                          label: _isSubmitting
+                              ? 'Creating Account...'
+                              : 'Register',
+                          onPressed: _register,
+                        ),
+                        const SizedBox(height: 22),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            const Text(
+                              'Already have an account?',
+                              style: TextStyle(
+                                color: AppColors.silver,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _openLogin,
+                              child: const Text(
+                                'Login',
+                                style: TextStyle(
+                                  color: AppColors.orange,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RegisterBrand extends StatelessWidget {
+  const _RegisterBrand();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SizedBox(
+        width: 210,
+        height: 250,
+        child: ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.topLeft,
+            minWidth: 0,
+            minHeight: 0,
+            maxWidth: 920,
+            maxHeight: 736,
+            child: Transform.translate(
+              offset: const Offset(-110, -98),
+              child: Image.asset(
+                'assets/images/auth/eagle.png',
+                width: 920,
+                height: 736,
+                fit: BoxFit.fill,
+                filterQuality: FilterQuality.high,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RegisterField extends StatelessWidget {
+  const _RegisterField({
+    super.key,
+    required this.controller,
+    required this.hintText,
+    required this.icon,
+    this.obscureText = false,
+    this.maxLength,
+    this.keyboardType,
+    this.inputFormatters,
+    this.textInputAction,
+    this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final String hintText;
+  final IconData icon;
+  final bool obscureText;
+  final int? maxLength;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(
+        color: const Color(0xFF41607D).withAlpha(118),
+        width: 1.2,
+      ),
+    );
+
+    return SizedBox(
+      height: 58,
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(
+          color: AppColors.white,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+        obscureText: obscureText,
+        maxLength: maxLength,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        textInputAction: textInputAction,
+        onSubmitted: onSubmitted,
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: const Color(0xFF142E48),
+          hintText: hintText,
+          counterText: '',
+          hintStyle: const TextStyle(
+            color: Color(0xFF9EABC1),
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+          prefixIcon: Icon(icon, color: const Color(0xFF9EABC1), size: 23),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 18),
+          border: border,
+          enabledBorder: border,
+          focusedBorder: border.copyWith(
+            borderSide: const BorderSide(color: AppColors.orange, width: 1.4),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RegisterSubmitButton extends StatelessWidget {
+  const _RegisterSubmitButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFB21B), Color(0xFFFFA30A)],
+          ),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: onPressed,
+            child: Center(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.prussian,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
           ),

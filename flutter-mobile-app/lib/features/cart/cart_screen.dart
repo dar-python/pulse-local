@@ -67,7 +67,30 @@ class CartScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Header(title: 'My Cart', onBack: () => Navigator.pop(context)),
+              Row(
+                children: [
+                  Expanded(
+                    child: _Header(
+                      title: 'My Cart',
+                      onBack: () => Navigator.pop(context),
+                    ),
+                  ),
+                  if (items.isNotEmpty && cartController != null)
+                    TextButton(
+                      key: const Key('cart_clear_all'),
+                      onPressed: () =>
+                          _confirmClearCart(context, cartController),
+                      child: const Text(
+                        'Clear all',
+                        style: TextStyle(
+                          color: AppColors.orange,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 12),
               AppCard(
                 child: Row(
@@ -148,6 +171,7 @@ class CartScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+              ] else ...[
                 for (final cartItem in items)
                   _InteractiveCartItemRow(
                     itemId: cartItem.item.id,
@@ -234,44 +258,34 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmClearCart(BuildContext context) async {
+  Future<void> _confirmClearCart(
+    BuildContext context,
+    FoodPulseCartController cartController,
+  ) async {
     final shouldClear = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
           backgroundColor: AppColors.prussian,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(color: AppColors.orange.withAlpha(96)),
-          ),
           title: const Text(
             'Clear all items from your cart?',
             style: TextStyle(
               color: AppColors.white,
-              fontSize: 17,
               fontWeight: FontWeight.w900,
             ),
+          ),
+          content: const Text(
+            'This removes every item in your current order.',
+            style: TextStyle(color: AppColors.silver),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
-                  color: AppColors.silver,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text(
-                'Clear Cart',
-                style: TextStyle(
-                  color: AppColors.orange,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
+              child: const Text('Clear Cart'),
             ),
           ],
         );
@@ -279,7 +293,7 @@ class CartScreen extends StatelessWidget {
     );
 
     if (shouldClear == true) {
-      _cartController?.clear();
+      cartController.clear();
     }
   }
 }
