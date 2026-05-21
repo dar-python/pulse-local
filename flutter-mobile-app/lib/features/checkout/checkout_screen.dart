@@ -164,8 +164,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ],
                 ),
               ),
-<<<<<<< HEAD
-=======
               const SizedBox(height: 12),
               AppCard(
                 color: AppColors.tangerine.withAlpha(24),
@@ -194,7 +192,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ],
                 ),
               ),
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
               const SizedBox(height: 14),
               const _SectionTitle('Delivery Address'),
               const SizedBox(height: 8),
@@ -372,8 +369,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-<<<<<<< HEAD
-=======
   IconData get _riskAdvisoryIcon {
     if (_riskErrorMessage != null) {
       return Icons.info_outline_rounded;
@@ -462,7 +457,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return '${phrases.first} and ${phrases[1]}';
   }
 
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
   void _selectPaymentMethod(String paymentMethod) {
     if (_paymentMethod == paymentMethod) {
       return;
@@ -477,8 +471,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          _DeliveryAddressSheet(selectedAddress: _deliveryAddress),
+      builder: (_) => _DeliveryAddressSheet(selectedAddress: _deliveryAddress),
     );
 
     if (selected == null || !mounted) {
@@ -906,7 +899,100 @@ class _RiskSummary extends StatelessWidget {
   }
 }
 
-<<<<<<< HEAD
+class _AdvisoryLine extends StatelessWidget {
+  const _AdvisoryLine({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: AppColors.tangerine, size: 16),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: AppColors.alabaster,
+              fontSize: 11,
+              height: 1.4,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DelayReasonList extends StatelessWidget {
+  const _DelayReasonList({required this.reasons, required this.etaText});
+
+  final List<RiskAdvisoryReason> reasons;
+  final String etaText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.white.withAlpha(10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.white.withAlpha(18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CompactRiskLine(icon: Icons.schedule_rounded, text: etaText),
+          if (reasons.isNotEmpty) ...[
+            const SizedBox(height: 9),
+            for (final reason in reasons) ...[
+              _CompactRiskLine(
+                icon: Icons.warning_amber_rounded,
+                text: reason.label,
+              ),
+              if (reason != reasons.last) const SizedBox(height: 6),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactRiskLine extends StatelessWidget {
+  const _CompactRiskLine({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: AppColors.orange, size: 15),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: AppColors.alabaster,
+              fontSize: 11,
+              height: 1.4,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _DeliveryAddressSheet extends StatelessWidget {
   const _DeliveryAddressSheet({required this.selectedAddress});
 
@@ -1038,76 +1124,20 @@ class _AddressOptionTile extends StatelessWidget {
               ],
             ),
           ),
-=======
-class _DelayReasonList extends StatelessWidget {
-  const _DelayReasonList({required this.reasons, required this.etaText});
-
-  final List<RiskAdvisoryReason> reasons;
-  final String etaText;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.white.withAlpha(10),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.white.withAlpha(18)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _CompactRiskLine(icon: Icons.schedule_rounded, text: etaText),
-          if (reasons.isNotEmpty) ...[
-            const SizedBox(height: 9),
-            for (final reason in reasons) ...[
-              _CompactRiskLine(
-                icon: Icons.warning_amber_rounded,
-                text: reason.label,
-              ),
-              if (reason != reasons.last) const SizedBox(height: 6),
-            ],
+          if (selected) ...[
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: AppColors.orange,
+              size: 18,
+            ),
           ],
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
         ],
       ),
     );
   }
 }
 
-<<<<<<< HEAD
-=======
-class _CompactRiskLine extends StatelessWidget {
-  const _CompactRiskLine({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: AppColors.orange, size: 15),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: AppColors.alabaster,
-              fontSize: 11,
-              height: 1.4,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
 class _ButtonSpinner extends StatelessWidget {
   const _ButtonSpinner();
 

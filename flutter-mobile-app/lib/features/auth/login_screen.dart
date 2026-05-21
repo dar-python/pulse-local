@@ -350,8 +350,9 @@ class _LoginPanel extends StatelessWidget {
                 onPressed: () => onLogin(),
               ),
               const SizedBox(height: 26),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   const Text(
                     "Don't have an account?",

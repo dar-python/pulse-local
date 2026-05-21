@@ -15,12 +15,11 @@ Route::get('/health', function () {
 
 Route::post('/checkout/risk', CheckoutRiskController::class);
 
-<<<<<<< HEAD
 Route::post('/auth/register', [MobileAuthController::class, 'register']);
 Route::post('/auth/login', [MobileAuthController::class, 'login']);
 Route::put('/auth/profile', [MobileAuthController::class, 'updateProfile']);
 Route::put('/auth/password', [MobileAuthController::class, 'updatePassword']);
-=======
+
 Route::middleware(['web', 'admin.session'])
     ->prefix('admin')
     ->name('api.admin.')
@@ -28,7 +27,6 @@ Route::middleware(['web', 'admin.session'])
         Route::get('/model-metadata', ModelMetadataController::class)
             ->name('model-metadata');
     });
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
 
 Route::get('/restaurants', [FoodPulseController::class, 'restaurants']);
 Route::get('/restaurants/{restaurant}/menu', [FoodPulseController::class, 'menu'])

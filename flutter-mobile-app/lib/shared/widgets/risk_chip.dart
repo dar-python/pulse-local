@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/models/risk_info.dart';
-import '../../core/theme/app_colors.dart';
 
 class RiskChip extends StatelessWidget {
   const RiskChip({

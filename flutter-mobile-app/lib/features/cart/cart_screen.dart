@@ -35,21 +35,6 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
-    if (_cartController == null) {
-      return _buildCart(context);
-    }
-
-    final cartController = _cartController;
-    return AnimatedBuilder(
-      animation: cartController,
-      builder: (context, _) => _buildCart(context),
-    );
-  }
-
-  Widget _buildCart(BuildContext context) {
-    final cartController = _cartController;
-=======
     final cartController = _cartController;
     if (cartController != null) {
       return AnimatedBuilder(
@@ -62,7 +47,7 @@ class CartScreen extends StatelessWidget {
   }
 
   Widget _buildScaffold(BuildContext context) {
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
+    final cartController = _cartController;
     final restaurant =
         cartController?.restaurant ??
         _restaurant ??
@@ -72,6 +57,7 @@ class CartScreen extends StatelessWidget {
     final deliveryFee = restaurant.deliveryFee;
     final serviceCharge = MockFoodPulseData.serviceCharge;
     final total = subtotal + deliveryFee + serviceCharge;
+    final isCartEmpty = items.isEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.prussian,
@@ -118,23 +104,18 @@ class CartScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-<<<<<<< HEAD
-              if (items.isEmpty)
-                const _EmptyCartState()
-=======
               if (isCartEmpty)
-                Column(
+                const Column(
                   children: [
-                    const _EmptyCartState(),
-                    const SizedBox(height: 14),
+                    _EmptyCartState(),
+                    SizedBox(height: 14),
                     PrimaryButton(
-                      key: const Key('cart_checkout_button'),
+                      key: Key('cart_checkout_button'),
                       label: 'Proceed to Checkout',
                       onPressed: null,
                     ),
                   ],
                 )
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
               else ...[
                 Row(
                   children: [
@@ -168,22 +149,6 @@ class CartScreen extends StatelessWidget {
                   ],
                 ),
                 for (final cartItem in items)
-<<<<<<< HEAD
-                  _CartItemRow(
-                    cartItem: cartItem,
-                    onDecrease: cartController == null
-                        ? null
-                        : () => cartController.decreaseItem(cartItem.item),
-                    onIncrease: cartController == null
-                        ? null
-                        : () => cartController.addItem(
-                            restaurant: restaurant,
-                            item: cartItem.item,
-                          ),
-                    onRemove: cartController == null
-                        ? null
-                        : () => cartController.removeItem(cartItem.item),
-=======
                   _InteractiveCartItemRow(
                     itemId: cartItem.item.id,
                     emoji: cartItem.item.emoji,
@@ -192,19 +157,18 @@ class CartScreen extends StatelessWidget {
                     price: cartItem.item.price,
                     quantity: cartItem.quantity,
                     lineTotal: cartItem.lineTotal,
-                    onIncrease: _cartController == null
+                    onIncrease: cartController == null
                         ? null
-                        : () => _cartController.increaseItem(
+                        : () => cartController.increaseItem(
                             restaurant: restaurant,
                             item: cartItem.item,
                           ),
-                    onDecrease: _cartController == null
+                    onDecrease: cartController == null
                         ? null
-                        : () => _cartController.decreaseItem(cartItem.item.id),
-                    onRemove: _cartController == null
+                        : () => cartController.decreaseItem(cartItem.item.id),
+                    onRemove: cartController == null
                         ? null
-                        : () => _cartController.removeItem(cartItem.item.id),
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
+                        : () => cartController.removeItem(cartItem.item.id),
                   ),
                 const SizedBox(height: 12),
                 AppCard(
@@ -241,12 +205,8 @@ class CartScreen extends StatelessWidget {
                 _PromoBox(),
                 const SizedBox(height: 14),
                 PrimaryButton(
-<<<<<<< HEAD
-                  label: 'Place order - P$total',
-=======
                   key: const Key('cart_checkout_button'),
-                  label: 'Proceed to Checkout →',
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
+                  label: 'Proceed to Checkout',
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => CheckoutScreen(
@@ -398,19 +358,6 @@ class _Header extends StatelessWidget {
   }
 }
 
-<<<<<<< HEAD
-class _CartItemRow extends StatelessWidget {
-  const _CartItemRow({
-    required this.cartItem,
-    this.onDecrease,
-    this.onIncrease,
-    this.onRemove,
-  });
-
-  final CartItem cartItem;
-  final VoidCallback? onDecrease;
-  final VoidCallback? onIncrease;
-=======
 class _InteractiveCartItemRow extends StatelessWidget {
   const _InteractiveCartItemRow({
     required this.itemId,
@@ -434,13 +381,10 @@ class _InteractiveCartItemRow extends StatelessWidget {
   final int lineTotal;
   final VoidCallback? onIncrease;
   final VoidCallback? onDecrease;
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
   final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
-    final item = cartItem.item;
-
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
@@ -451,8 +395,8 @@ class _InteractiveCartItemRow extends StatelessWidget {
       child: Row(
         children: [
           FoodPulseAssetImage(
-            imageAsset: item.imageAsset,
-            fallbackLabel: item.emoji,
+            imageAsset: imageAsset,
+            fallbackLabel: emoji,
             width: 44,
             height: 44,
             backgroundColor: AppColors.dusk.withAlpha(96),
@@ -468,7 +412,7 @@ class _InteractiveCartItemRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.name,
+                  name,
                   style: const TextStyle(
                     color: AppColors.white,
                     fontSize: 13,
@@ -477,51 +421,24 @@ class _InteractiveCartItemRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-<<<<<<< HEAD
-                  'P${item.price} x ${cartItem.quantity}',
-=======
                   'P$price x $quantity',
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
                   style: const TextStyle(color: AppColors.silver, fontSize: 11),
                 ),
               ],
             ),
           ),
-<<<<<<< HEAD
-=======
           const SizedBox(width: 8),
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-<<<<<<< HEAD
-                'P${cartItem.lineTotal}',
-=======
                 'P$lineTotal',
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
                 style: const TextStyle(
                   color: AppColors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.w900,
                 ),
               ),
-<<<<<<< HEAD
-              const SizedBox(height: 7),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _QuantityIconButton(
-                    icon: cartItem.quantity <= 1
-                        ? Icons.delete_outline_rounded
-                        : Icons.remove_rounded,
-                    onTap: onDecrease,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      '${cartItem.quantity}',
-=======
               const SizedBox(height: 8),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -536,7 +453,6 @@ class _InteractiveCartItemRow extends StatelessWidget {
                     alignment: Alignment.center,
                     child: Text(
                       '$quantity',
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
                       style: const TextStyle(
                         color: AppColors.white,
                         fontSize: 12,
@@ -544,30 +460,6 @@ class _InteractiveCartItemRow extends StatelessWidget {
                       ),
                     ),
                   ),
-<<<<<<< HEAD
-                  _QuantityIconButton(
-                    icon: Icons.add_rounded,
-                    onTap: onIncrease,
-                  ),
-                ],
-              ),
-              TextButton(
-                onPressed: onRemove,
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(44, 24),
-                ),
-                child: const Text(
-                  'Remove',
-                  style: TextStyle(
-                    color: AppColors.silver,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-=======
                   _CartIconButton(
                     key: Key('cart_item_increase_$itemId'),
                     icon: Icons.add_rounded,
@@ -581,7 +473,6 @@ class _InteractiveCartItemRow extends StatelessWidget {
                   ),
                 ],
               ),
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
             ],
           ),
         ],
@@ -590,32 +481,14 @@ class _InteractiveCartItemRow extends StatelessWidget {
   }
 }
 
-<<<<<<< HEAD
-class _QuantityIconButton extends StatelessWidget {
-  const _QuantityIconButton({required this.icon, required this.onTap});
-=======
 class _CartIconButton extends StatelessWidget {
   const _CartIconButton({super.key, required this.icon, required this.onTap});
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
 
   final IconData icon;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
-    return InkWell(
-      borderRadius: BorderRadius.circular(11),
-      onTap: onTap,
-      child: Container(
-        width: 22,
-        height: 22,
-        decoration: BoxDecoration(
-          color: AppColors.orange,
-          borderRadius: BorderRadius.circular(11),
-        ),
-        child: Icon(icon, color: AppColors.prussian, size: 15),
-=======
     final enabled = onTap != null;
 
     return InkWell(
@@ -638,7 +511,6 @@ class _CartIconButton extends StatelessWidget {
           color: enabled ? AppColors.orange : AppColors.silver,
           size: 16,
         ),
->>>>>>> 18df08fdba0b440f2f19572b1e7b31a29cc5205f
       ),
     );
   }

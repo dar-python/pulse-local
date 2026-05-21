@@ -116,7 +116,7 @@ void main() {
     expect(find.textContaining('149'), findsWidgets);
     expect(find.textContaining('188'), findsWidgets);
 
-    await tester.tap(find.textContaining('Place order'));
+    await tester.tap(find.byKey(const Key('cart_checkout_button')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.textContaining('Place Order'));
     await tester.tap(find.textContaining('Place Order'));

@@ -14,7 +14,7 @@ return new class extends Migration
             }
 
             if (! Schema::hasColumn('users', 'role')) {
-                $table->string('role')->default('admin')->after('password');
+                $table->string('role')->default('customer')->after('password');
             }
         });
     }
