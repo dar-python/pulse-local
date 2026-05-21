@@ -34,7 +34,7 @@ class CheckoutPredictionFeatureBuilderTest extends TestCase
 
         $this->assertSame([
             'Distance_km' => 5.0,
-            'Weather' => 'rainy',
+            'Weather' => 'clear',
             'Traffic_Level' => 'medium',
             'Time_of_Day' => 'evening',
             'Vehicle_Type' => 'motorcycle',
@@ -87,7 +87,7 @@ class CheckoutPredictionFeatureBuilderTest extends TestCase
 
         $this->assertSame([
             'Distance_km' => 6.6,
-            'Weather' => 'stormy',
+            'Weather' => 'clear',
             'Traffic_Level' => 'high',
             'Time_of_Day' => 'night',
             'Vehicle_Type' => 'motorcycle',
@@ -113,6 +113,16 @@ class CheckoutPredictionFeatureBuilderTest extends TestCase
 
         $this->assertSame(15, $smallCart['Preparation_Time_min']);
         $this->assertSame(25, $largeCart['Preparation_Time_min']);
+    }
+
+    public function test_resolved_weather_category_is_used_for_model_features(): void
+    {
+        Carbon::setTestNow('2026-05-18 10:00:00');
+
+        $features = app(CheckoutPredictionFeatureBuilder::class)
+            ->build($this->payload(), 'stormy');
+
+        $this->assertSame('stormy', $features['Weather']);
     }
 
     public function test_current_server_time_maps_to_time_of_day(): void

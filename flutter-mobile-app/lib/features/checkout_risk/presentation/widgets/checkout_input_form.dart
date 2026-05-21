@@ -18,7 +18,6 @@ class _CheckoutInputFormState extends ConsumerState<CheckoutInputForm> {
   late final TextEditingController _distanceController;
 
   String _trafficCorridorIntensity = 'high';
-  String _weatherCategory = 'rainy';
   String _addressComplexity = 'medium';
   String _paymentMethod = 'cod';
 
@@ -36,7 +35,6 @@ class _CheckoutInputFormState extends ConsumerState<CheckoutInputForm> {
       text: sample.deliveryDistanceKm.toString(),
     );
     _trafficCorridorIntensity = sample.trafficCorridorIntensity;
-    _weatherCategory = sample.weatherCategory;
     _addressComplexity = sample.addressComplexity;
     _paymentMethod = sample.paymentMethod;
   }
@@ -87,15 +85,6 @@ class _CheckoutInputFormState extends ConsumerState<CheckoutInputForm> {
             },
           ),
           const SizedBox(height: 12),
-          _DropdownField(
-            label: 'Weather category',
-            value: _weatherCategory,
-            values: const ['clear', 'rainy', 'stormy'],
-            onChanged: (value) {
-              setState(() => _weatherCategory = value);
-            },
-          ),
-          const SizedBox(height: 12),
           TextFormField(
             controller: _distanceController,
             decoration: const InputDecoration(
@@ -143,7 +132,6 @@ class _CheckoutInputFormState extends ConsumerState<CheckoutInputForm> {
       riderToOrderRatio: double.parse(_riderRatioController.text.trim()),
       merchantPrepTime: int.parse(_merchantPrepController.text.trim()),
       trafficCorridorIntensity: _trafficCorridorIntensity,
-      weatherCategory: _weatherCategory,
       deliveryDistanceKm: double.parse(_distanceController.text.trim()),
       addressComplexity: _addressComplexity,
       paymentMethod: _paymentMethod,

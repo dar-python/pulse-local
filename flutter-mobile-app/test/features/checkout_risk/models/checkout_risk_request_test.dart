@@ -63,5 +63,18 @@ void main() {
     expect(json, isNot(contains('rider_to_order_ratio')));
     expect(json, isNot(contains('merchant_prep_time')));
     expect(json, isNot(contains('delivery_distance_km')));
+    expect(json, isNot(contains('weather_category')));
+  });
+
+  test('serializes optional delivery coordinates for Laravel weather lookup', () {
+    const request = CheckoutRiskRequest(
+      deliveryLatitude: 14.5995,
+      deliveryLongitude: 120.9842,
+    );
+
+    final json = request.toJson();
+
+    expect(json['delivery_latitude'], 14.5995);
+    expect(json['delivery_longitude'], 120.9842);
   });
 }

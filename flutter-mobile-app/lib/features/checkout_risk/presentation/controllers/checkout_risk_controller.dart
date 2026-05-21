@@ -70,7 +70,6 @@ class CheckoutRiskController extends StateNotifier<CheckoutRiskState> {
     riderToOrderRatio: 0.45,
     merchantPrepTime: 25,
     trafficCorridorIntensity: 'high',
-    weatherCategory: 'rainy',
     deliveryDistanceKm: 4.2,
     addressComplexity: 'medium',
     paymentMethod: 'cod',

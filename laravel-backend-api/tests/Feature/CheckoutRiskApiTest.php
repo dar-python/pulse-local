@@ -13,6 +13,13 @@ use Tests\TestCase;
 
 class CheckoutRiskApiTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['services.weatherapi.key' => null]);
+    }
+
     protected function tearDown(): void
     {
         Carbon::setTestNow();
@@ -23,9 +30,15 @@ class CheckoutRiskApiTest extends TestCase
     public function test_checkout_risk_endpoint_builds_model_features_and_returns_ml_service_result(): void
     {
         Carbon::setTestNow('2026-05-18 18:15:00');
-        config(['services.ml_service.url' => 'http://ml-service:8001']);
+        config([
+            'services.ml_service.url' => 'http://ml-service:8001',
+            'services.weatherapi.key' => 'test-weather-key',
+        ]);
 
         Http::fake([
+            'https://api.weatherapi.com/v1/current.json*' => Http::response(
+                $this->weatherApiPayload(1003, 'Partly cloudy')
+            ),
             'http://ml-service:8001/predict' => Http::response([
                 'risk_score' => 0.85,
                 'risk_level' => 'High',
@@ -44,6 +57,12 @@ class CheckoutRiskApiTest extends TestCase
                     'risk_level' => 'High',
                     'recommendation' => 'High fulfillment risk. Adjust ETA and notify merchant.',
                     'eta_range' => '40-55 min',
+                    'weather' => [
+                        'category' => 'clear',
+                        'condition_text' => 'Partly cloudy',
+                        'condition_code' => 1003,
+                        'source' => 'weatherapi',
+                    ],
                 ],
             ]);
 
@@ -56,13 +75,14 @@ class CheckoutRiskApiTest extends TestCase
                 'eta_range',
                 'advisory_message',
                 'advisory_reasons',
+                'weather',
             ],
             array_keys($response->json('data'))
         );
 
         Http::assertSent(fn ($request) => $request->url() === 'http://ml-service:8001/predict'
             && $request['Distance_km'] === 5.0
-            && $request['Weather'] === 'rainy'
+            && $request['Weather'] === 'clear'
             && $request['Traffic_Level'] === 'medium'
             && $request['Time_of_Day'] === 'evening'
             && $request['Vehicle_Type'] === 'motorcycle'
@@ -70,6 +90,94 @@ class CheckoutRiskApiTest extends TestCase
             && $request['Courier_Experience_yrs'] === 2.0
             && ! isset($request['rider_to_order_ratio'])
             && ! isset($request['merchant_prep_time']));
+    }
+
+    public function test_checkout_ignores_client_weather_and_sends_laravel_resolved_weather_to_ml(): void
+    {
+        Carbon::setTestNow('2026-05-18 18:15:00');
+        config([
+            'services.ml_service.url' => 'http://ml-service:8001',
+            'services.weatherapi.key' => 'fake-weather-key-that-must-not-leak',
+        ]);
+
+        Http::fake([
+            'https://api.weatherapi.com/v1/current.json*' => Http::response(
+                $this->weatherApiPayload(1000, 'Sunny')
+            ),
+            'http://ml-service:8001/predict' => Http::response([
+                'risk_score' => 0.42,
+                'risk_level' => 'Medium',
+                'recommendation' => 'Medium fulfillment risk. Show ETA.',
+            ]),
+        ]);
+
+        $response = $this->postJson('/api/checkout/risk', [
+            ...$this->validPayload(),
+            'weather_category' => 'rainy',
+            'delivery_latitude' => 14.5995,
+            'delivery_longitude' => 120.9842,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.weather.category', 'clear')
+            ->assertJsonPath('data.weather.condition_text', 'Sunny')
+            ->assertJsonPath('data.weather.condition_code', 1000)
+            ->assertJsonPath('data.weather.source', 'weatherapi');
+
+        $this->assertStringNotContainsString(
+            'fake-weather-key-that-must-not-leak',
+            $response->getContent()
+        );
+
+        Http::assertSent(fn ($request) => $request->url() === 'http://ml-service:8001/predict'
+            && $request['Weather'] === 'clear');
+    }
+
+    public function test_checkout_weatherapi_failure_uses_clear_fallback_without_exposing_api_key(): void
+    {
+        Carbon::setTestNow('2026-05-18 18:15:00');
+        config([
+            'services.ml_service.url' => 'http://ml-service:8001',
+            'services.weatherapi.key' => 'fake-weather-key-that-must-not-leak',
+        ]);
+
+        Log::shouldReceive('warning')
+            ->once()
+            ->with(
+                'WeatherAPI current weather fallback triggered.',
+                Mockery::on(fn (array $context): bool => ! str_contains(
+                    json_encode($context, JSON_THROW_ON_ERROR),
+                    'fake-weather-key-that-must-not-leak'
+                ))
+            );
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'current.json')) {
+                throw new ConnectionException(
+                    'Connection failed for fake-weather-key-that-must-not-leak'
+                );
+            }
+
+            return Http::response([
+                'risk_score' => 0.42,
+                'risk_level' => 'Medium',
+                'recommendation' => 'Medium fulfillment risk. Show ETA.',
+            ]);
+        });
+
+        $response = $this->postJson('/api/checkout/risk', $this->validPayload());
+
+        $response->assertOk()
+            ->assertJsonPath('data.weather.category', 'clear')
+            ->assertJsonPath('data.weather.source', 'fallback');
+
+        $this->assertStringNotContainsString(
+            'fake-weather-key-that-must-not-leak',
+            $response->getContent()
+        );
+
+        Http::assertSent(fn ($request) => $request->url() === 'http://ml-service:8001/predict'
+            && $request['Weather'] === 'clear');
     }
 
     public function test_checkout_risk_endpoint_returns_fallback_when_ml_service_is_unavailable(): void
@@ -209,7 +317,7 @@ class CheckoutRiskApiTest extends TestCase
             ->assertJsonPath('data.eta_range', '40-55 min')
             ->assertJsonPath(
                 'data.advisory_message',
-                'Possible delay because of bad weather and heavy traffic.'
+                'Possible delay because of heavy traffic and longer preparation time.'
             )
             ->assertJsonMissingPath('data.model_features')
             ->assertJsonMissingPath('data.feature_keys');
@@ -223,6 +331,7 @@ class CheckoutRiskApiTest extends TestCase
                 'eta_range',
                 'advisory_message',
                 'advisory_reasons',
+                'weather',
             ],
             array_keys($response->json('data'))
         );
@@ -278,7 +387,7 @@ class CheckoutRiskApiTest extends TestCase
 
         $this->assertCount(2, $payloads);
         $this->assertNotSame($payloads[0], $payloads[1]);
-        $this->assertSame('rainy', $payloads[0]['Weather']);
+        $this->assertSame('clear', $payloads[0]['Weather']);
         $this->assertSame('clear', $payloads[1]['Weather']);
         $this->assertSame(25, $payloads[0]['Preparation_Time_min']);
         $this->assertSame(15, $payloads[1]['Preparation_Time_min']);
@@ -388,6 +497,24 @@ class CheckoutRiskApiTest extends TestCase
             'payment_method' => 'gcash',
             'subtotal' => 149,
             'total_quantity' => 1,
+        ];
+    }
+
+    private function weatherApiPayload(int $code, string $text): array
+    {
+        return [
+            'location' => [
+                'tz_id' => 'Asia/Manila',
+            ],
+            'current' => [
+                'last_updated_epoch' => 1779330600,
+                'temp_c' => 30.2,
+                'precip_mm' => 0,
+                'condition' => [
+                    'text' => $text,
+                    'code' => $code,
+                ],
+            ],
         ];
     }
 }

@@ -80,6 +80,8 @@ class CheckoutRiskRequest extends FormRequest
             'payment_method' => ['required', 'string', 'in:cod,cash,gcash,card'],
             'subtotal' => ['nullable', 'numeric', 'min:0'],
             'total_quantity' => ['nullable', 'integer', 'min:1'],
+            'delivery_latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'delivery_longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ];
     }
 
