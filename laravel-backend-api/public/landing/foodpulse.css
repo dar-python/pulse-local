@@ -1,0 +1,700 @@
+:root {
+    --midnight: #071827;
+    --prussian: #0B2033;
+    --ink: #102B43;
+    --orange: #FCA311;
+    --tangerine: #C0392B;
+    --green: #1A7A2E;
+    --dusk: #1A3854;
+    --silver: #8A9BB0;
+    --alabaster: #F0F2F5;
+    --white: #FFFFFF;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: var(--midnight);
+    color: var(--alabaster);
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    letter-spacing: 0;
+    line-height: 1.5;
+    margin: 0;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+code {
+    color: var(--white);
+    font-family: Consolas, "Courier New", monospace;
+    overflow-wrap: anywhere;
+}
+
+.shell {
+    margin: 0 auto;
+    max-width: 1240px;
+    padding-inline: clamp(1rem, 3vw, 2.5rem);
+    width: 100%;
+}
+
+.site-header {
+    background: var(--midnight);
+    border-bottom: 1px solid var(--dusk);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.nav-bar {
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    min-height: 4.5rem;
+}
+
+.brand,
+.footer-row {
+    align-items: center;
+    display: flex;
+    gap: 0.8rem;
+}
+
+.brand strong,
+.footer-row strong {
+    color: var(--white);
+    display: block;
+    font-size: 1.05rem;
+}
+
+.brand small {
+    color: var(--silver);
+    display: block;
+    font-size: 0.78rem;
+}
+
+.brand-mark {
+    align-items: center;
+    background: linear-gradient(135deg, var(--orange), var(--tangerine));
+    border-radius: 8px;
+    color: var(--midnight);
+    display: inline-flex;
+    flex: 0 0 2.25rem;
+    font-size: 0.84rem;
+    font-weight: 900;
+    height: 2.25rem;
+    justify-content: center;
+    width: 2.25rem;
+}
+
+.nav-links {
+    align-items: center;
+    color: var(--silver);
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(0.65rem, 1.5vw, 1.25rem);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.nav-links a:hover,
+.nav-links a:focus-visible {
+    color: var(--orange);
+}
+
+.band {
+    border-bottom: 1px solid var(--dusk);
+    overflow: hidden;
+    position: relative;
+}
+
+.hero {
+    background:
+        linear-gradient(135deg, var(--prussian), var(--midnight)),
+        linear-gradient(90deg, var(--dusk), var(--prussian));
+}
+
+.hero-grid {
+    align-items: center;
+    display: grid;
+    gap: clamp(1.5rem, 5vw, 5rem);
+    grid-template-columns: minmax(0, 1.05fr) minmax(20rem, 0.75fr);
+    min-height: min(88svh, 54rem);
+    padding-block: clamp(3rem, 7vw, 6.5rem);
+}
+
+.eyebrow {
+    color: var(--orange);
+    font-size: 0.78rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    margin: 0 0 0.8rem;
+    text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+    margin-top: 0;
+}
+
+h1 {
+    color: var(--white);
+    font-size: 7.3rem;
+    line-height: 0.95;
+    margin-bottom: 1rem;
+}
+
+h2 {
+    color: var(--white);
+    font-size: 3.15rem;
+    line-height: 1.05;
+    margin-bottom: 0.9rem;
+}
+
+h3 {
+    color: var(--white);
+    font-size: 1.12rem;
+    line-height: 1.2;
+    margin-bottom: 0.65rem;
+}
+
+.hero-lead {
+    color: var(--orange);
+    font-size: 1.7rem;
+    font-weight: 800;
+    max-width: 35rem;
+}
+
+.hero-body,
+.section-head > p:not(.eyebrow),
+.weather-card p,
+.endpoint p {
+    color: var(--silver);
+    max-width: 48rem;
+}
+
+.hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 1.9rem;
+}
+
+.button {
+    align-items: center;
+    border: 1px solid var(--dusk);
+    border-radius: 8px;
+    display: inline-flex;
+    font-weight: 900;
+    justify-content: center;
+    min-height: 3rem;
+    padding: 0.75rem 1rem;
+}
+
+.button-primary {
+    background: linear-gradient(135deg, var(--orange), var(--tangerine));
+    border-color: var(--orange);
+    color: var(--midnight);
+}
+
+.button-secondary {
+    background: var(--ink);
+    color: var(--alabaster);
+}
+
+.button:hover,
+.button:focus-visible {
+    border-color: var(--orange);
+}
+
+.risk-preview,
+.api-panel,
+.weather-card,
+.note-panel {
+    background: var(--ink);
+    border: 1px solid var(--dusk);
+    border-radius: 8px;
+}
+
+.risk-preview {
+    display: grid;
+    gap: 1.3rem;
+    padding: clamp(1rem, 3vw, 1.8rem);
+}
+
+.preview-topline,
+.base-url,
+.endpoint,
+.stat-pill {
+    align-items: center;
+    display: flex;
+    gap: 0.85rem;
+}
+
+.preview-topline {
+    border-bottom: 1px solid var(--dusk);
+    color: var(--silver);
+    font-size: 0.82rem;
+    justify-content: space-between;
+    padding-bottom: 0.9rem;
+}
+
+.preview-topline strong {
+    color: var(--orange);
+}
+
+.score-dial {
+    align-items: center;
+    aspect-ratio: 1;
+    background:
+        linear-gradient(var(--ink), var(--ink)) padding-box,
+        linear-gradient(135deg, var(--orange), var(--green), var(--tangerine)) border-box;
+    border: 0.7rem solid transparent;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    justify-self: center;
+    max-width: 12rem;
+    width: min(100%, 12rem);
+}
+
+.score-dial span {
+    color: var(--white);
+    font-size: 3.4rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.score-dial small,
+.preview-grid small {
+    color: var(--silver);
+}
+
+.preview-grid {
+    display: grid;
+    gap: 0.8rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.preview-grid > div,
+.metric-card,
+.info-card,
+.step-card {
+    background: var(--prussian);
+    border: 1px solid var(--dusk);
+    border-radius: 8px;
+}
+
+.preview-grid > div {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 5rem;
+    padding: 0.8rem;
+}
+
+.preview-grid strong {
+    color: var(--white);
+    font-size: 0.96rem;
+    overflow-wrap: anywhere;
+}
+
+.preview-grid .risk-medium {
+    color: var(--orange);
+}
+
+.section-stack,
+.weather-layout,
+.api-layout {
+    padding-block: clamp(3.5rem, 7vw, 6.5rem);
+}
+
+.overview-band,
+.model-band,
+.deployment-band {
+    background: var(--prussian);
+}
+
+.architecture-band,
+.checkout-band {
+    background: linear-gradient(180deg, var(--midnight), var(--prussian));
+}
+
+.weather-band,
+.api-band {
+    background: var(--midnight);
+}
+
+.section-head {
+    max-width: 54rem;
+}
+
+.card-grid,
+.step-grid,
+.metric-grid,
+.architecture-notes {
+    display: grid;
+    gap: 1rem;
+    margin-top: clamp(1.4rem, 3vw, 2.2rem);
+}
+
+.card-grid-four,
+.step-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.info-card,
+.step-card {
+    min-height: 13rem;
+    padding: 1.2rem;
+}
+
+.info-card span,
+.step-card span {
+    color: var(--orange);
+    display: inline-block;
+    font-size: 0.82rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+}
+
+.info-card p,
+.step-card p,
+.note-panel p:last-child,
+.site-footer p {
+    color: var(--silver);
+    margin-bottom: 0;
+}
+
+.flow-row {
+    align-items: stretch;
+    display: grid;
+    gap: 0.6rem;
+    grid-template-columns:
+        minmax(7.8rem, 1fr) auto minmax(7.8rem, 1fr) auto minmax(8.6rem, 1fr)
+        auto minmax(8.2rem, 1fr) auto minmax(8.6rem, 1fr) auto minmax(8.2rem, 1fr);
+    margin-top: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.flow-node {
+    align-items: center;
+    background: var(--ink);
+    border: 1px solid var(--dusk);
+    border-radius: 8px;
+    color: var(--alabaster);
+    display: flex;
+    font-weight: 900;
+    justify-content: center;
+    min-height: 6rem;
+    padding: 0.8rem;
+    text-align: center;
+}
+
+.flow-node-accent {
+    border-color: var(--orange);
+}
+
+.flow-node-result {
+    background: var(--green);
+    border-color: var(--green);
+    color: var(--white);
+}
+
+.flow-arrow {
+    align-self: center;
+    color: var(--orange);
+    font-weight: 900;
+    justify-self: center;
+}
+
+.architecture-notes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.note-panel {
+    padding: clamp(1rem, 2vw, 1.4rem);
+}
+
+.note-panel h3 {
+    overflow-wrap: anywhere;
+}
+
+.weather-layout {
+    align-items: start;
+    display: grid;
+    gap: clamp(1rem, 4vw, 3rem);
+    grid-template-columns: minmax(0, 0.9fr) minmax(20rem, 1fr);
+}
+
+.weather-card {
+    border-left: 4px solid var(--orange);
+    padding: clamp(1rem, 3vw, 1.8rem);
+}
+
+.weather-card ul {
+    color: var(--alabaster);
+    display: grid;
+    gap: 0.75rem;
+    margin: 1.2rem 0 0;
+    padding-left: 1.1rem;
+}
+
+.weather-card li::marker {
+    color: var(--orange);
+}
+
+.weather-card code,
+.field-row code,
+.base-url code,
+.section-head code,
+.endpoint > div > code {
+    background: var(--prussian);
+    border: 1px solid var(--dusk);
+    border-radius: 6px;
+    display: inline-block;
+    padding: 0.16rem 0.42rem;
+}
+
+.metric-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.metric-card {
+    display: grid;
+    gap: 0.45rem;
+    min-height: 10rem;
+    padding: 1rem;
+}
+
+.metric-card strong {
+    color: var(--orange);
+    font-size: 2.25rem;
+    line-height: 1;
+}
+
+.metric-card span,
+.stat-pill span,
+.base-url span {
+    color: var(--silver);
+    font-size: 0.82rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.metric-track {
+    align-self: end;
+    background: var(--dusk);
+    border-radius: 8px;
+    height: 0.55rem;
+    overflow: hidden;
+}
+
+.metric-track i {
+    background: linear-gradient(90deg, var(--orange), var(--tangerine));
+    display: block;
+    height: 100%;
+}
+
+.cross-validation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 1rem;
+}
+
+.stat-pill {
+    background: var(--ink);
+    border: 1px solid var(--dusk);
+    border-radius: 8px;
+    justify-content: space-between;
+    min-width: min(100%, 20rem);
+    padding: 0.9rem 1rem;
+}
+
+.stat-pill strong {
+    color: var(--white);
+    font-size: 1.15rem;
+}
+
+.api-layout {
+    display: grid;
+    gap: clamp(1rem, 4vw, 3rem);
+    grid-template-columns: minmax(0, 0.8fr) minmax(22rem, 1.2fr);
+}
+
+.api-panel {
+    display: grid;
+    gap: 1rem;
+    padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.base-url {
+    align-items: flex-start;
+    background: var(--prussian);
+    border: 1px solid var(--dusk);
+    border-radius: 8px;
+    flex-direction: column;
+    padding: 1rem;
+}
+
+.base-url code {
+    color: var(--orange);
+    width: 100%;
+}
+
+.endpoint {
+    align-items: flex-start;
+    background: var(--prussian);
+    border: 1px solid var(--dusk);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.endpoint p {
+    margin: 0.5rem 0 0;
+}
+
+.method {
+    border-radius: 6px;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 0.82rem;
+    justify-content: center;
+    min-width: 3.3rem;
+    padding: 0.3rem 0.55rem;
+}
+
+.method-get {
+    background: var(--green);
+    color: var(--white);
+}
+
+.method-post {
+    background: var(--orange);
+    color: var(--midnight);
+}
+
+.field-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.85rem;
+}
+
+.field-row code {
+    color: var(--alabaster);
+    font-size: 0.82rem;
+}
+
+.site-footer {
+    background: var(--midnight);
+    padding-block: 1.5rem 2rem;
+}
+
+.footer-row p {
+    font-size: 0.92rem;
+}
+
+@media (max-width: 1080px) {
+    h1 {
+        font-size: 5.5rem;
+    }
+
+    h2 {
+        font-size: 2.6rem;
+    }
+
+    .hero-lead {
+        font-size: 1.45rem;
+    }
+
+    .metric-card strong {
+        font-size: 1.9rem;
+    }
+
+    .score-dial span {
+        font-size: 2.8rem;
+    }
+
+    .hero-grid,
+    .weather-layout,
+    .api-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .flow-row {
+        grid-template-columns: 1fr;
+    }
+
+    .flow-arrow {
+        min-height: 1.4rem;
+    }
+
+    .card-grid-four,
+    .step-grid,
+    .metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    h1 {
+        font-size: 3rem;
+    }
+
+    h2 {
+        font-size: 1.8rem;
+    }
+
+    .hero-lead {
+        font-size: 1.2rem;
+    }
+
+    .metric-card strong {
+        font-size: 1.55rem;
+    }
+
+    .score-dial span {
+        font-size: 2rem;
+    }
+
+    .nav-bar,
+    .endpoint,
+    .preview-topline {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .preview-grid,
+    .card-grid-four,
+    .step-grid,
+    .metric-grid,
+    .architecture-notes {
+        grid-template-columns: 1fr;
+    }
+
+    .info-card,
+    .step-card {
+        min-height: 0;
+    }
+
+    .score-dial {
+        max-width: 10rem;
+    }
+}
