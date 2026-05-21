@@ -2,7 +2,7 @@
 .env.*
 !.env.example
 docs/
-
+EC2/
 .venv/
 venv/
 env/
