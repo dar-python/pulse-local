@@ -77,7 +77,7 @@ class CartScreen extends StatelessWidget {
                   ),
                   if (items.isNotEmpty && cartController != null)
                     TextButton(
-                      key: const Key('cart_clear_all'),
+                      key: const Key('cart_header_clear_all'),
                       onPressed: () =>
                           _confirmClearCart(context, cartController),
                       child: const Text(
@@ -154,7 +154,8 @@ class CartScreen extends StatelessWidget {
                     ),
                     TextButton.icon(
                       key: const Key('cart_clear_all'),
-                      onPressed: () => _confirmClearCart(context),
+                      onPressed: () =>
+                          _confirmClearCart(context, cartController),
                       icon: const Icon(
                         Icons.delete_sweep_outlined,
                         color: AppColors.orange,
@@ -171,7 +172,6 @@ class CartScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-              ] else ...[
                 for (final cartItem in items)
                   _InteractiveCartItemRow(
                     itemId: cartItem.item.id,
@@ -260,7 +260,7 @@ class CartScreen extends StatelessWidget {
 
   Future<void> _confirmClearCart(
     BuildContext context,
-    FoodPulseCartController cartController,
+    FoodPulseCartController? cartController,
   ) async {
     final shouldClear = await showDialog<bool>(
       context: context,
@@ -293,7 +293,7 @@ class CartScreen extends StatelessWidget {
     );
 
     if (shouldClear == true) {
-      cartController.clear();
+      cartController?.clear();
     }
   }
 }

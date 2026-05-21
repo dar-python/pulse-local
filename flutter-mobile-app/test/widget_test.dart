@@ -3,8 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse_local_app/app/foodpulse_app.dart';
 import 'package:pulse_local_app/core/data/mock_foodpulse_data.dart';
 import 'package:pulse_local_app/core/models/restaurant.dart';
-import 'package:pulse_local_app/core/network/api_exception.dart';
-import 'package:pulse_local_app/features/auth/auth_api_service.dart';
 import 'package:pulse_local_app/features/checkout/repositories/foodpulse_checkout_risk_repository.dart';
 import 'package:pulse_local_app/features/checkout_risk/models/checkout_risk_request.dart';
 import 'package:pulse_local_app/features/checkout_risk/models/risk_prediction_response.dart';
@@ -81,30 +79,6 @@ void main() {
     expect(find.text('Order #FP-2024-9873'), findsOneWidget);
     expect(find.text('68% - adjusting ETA'), findsOneWidget);
   });
-}
-
-class _StaticAuthApiService extends AuthApiService {
-  _StaticAuthApiService({this.error});
-
-  final ApiException? error;
-
-  @override
-  Future<AuthUser> login({
-    required String username,
-    required String password,
-  }) async {
-    final error = this.error;
-    if (error != null) {
-      throw error;
-    }
-
-    return AuthUser(
-      username: username,
-      name: username,
-      email: '$username@foodpulse.local',
-      contactNumber: '09175550148',
-    );
-  }
 }
 
 class _StaticFoodPulseCheckoutRiskRepository
