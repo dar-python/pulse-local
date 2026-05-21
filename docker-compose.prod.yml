@@ -1,0 +1,86 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: pulselocal-mysql
+    restart: unless-stopped
+    env_file:
+      - ./.env.mysql
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u\"$${MYSQL_USER}\" -p\"$${MYSQL_PASSWORD}\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - pulselocal-network
+
+  laravel-api:
+    image: ghcr.io/dar-python/food-pulse-laravel-api:${IMAGE_TAG:-latest}
+    container_name: pulselocal-laravel-api
+    restart: unless-stopped
+    working_dir: /var/www/html
+    env_file:
+      - ./laravel-backend-api/.env
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      LOG_CHANNEL: stderr
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      ML_SERVICE_URL: http://ml-service:8001
+      ML_SERVICE_TIMEOUT_SECONDS: 2
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ml-service:
+        condition: service_healthy
+    networks:
+      - pulselocal-network
+
+  laravel-nginx:
+    image: ghcr.io/dar-python/food-pulse-laravel-nginx:${IMAGE_TAG:-latest}
+    container_name: pulselocal-laravel-nginx
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - laravel-api
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - pulselocal-network
+
+  ml-service:
+    image: ghcr.io/dar-python/food-pulse-ml-service:${IMAGE_TAG:-latest}
+    container_name: pulselocal-ml-service
+    restart: unless-stopped
+    environment:
+      APP_NAME: PulseLocal ML Service
+      APP_ENV: production
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8001
+      LOG_LEVEL: info
+      MOCK_PREDICTION_ENABLED: "false"
+      MODEL_PATH: ./app/models/pulselocal_logistic_regression_model.joblib
+      RISK_LOW_MAX: 0.39
+      RISK_MEDIUM_MAX: 0.69
+      RISK_HIGH_MIN: 0.70
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - pulselocal-network
+
+networks:
+  pulselocal-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
