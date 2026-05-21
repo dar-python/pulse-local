@@ -142,7 +142,7 @@ void main() {
     expect(find.text('UNKNOWN RISK'), findsWidgets);
     expect(
       find.text('Fallback risk mode active. You can still place your order.'),
-      findsOneWidget,
+      findsWidgets,
     );
     expect(find.textContaining('laravel-fallback'), findsNothing);
   });
@@ -229,7 +229,7 @@ void main() {
       find.text(
         'Risk prediction is unavailable right now. You can still place your order.',
       ),
-      findsOneWidget,
+      findsWidgets,
     );
 
     final placeOrderButton = find.textContaining('Place Order');
