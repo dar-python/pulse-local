@@ -16,6 +16,7 @@ class LandingPageTest extends TestCase
         $response->assertOk()
             ->assertSee('FoodPulse')
             ->assertSee('href="/landing/foodpulse.css"', false)
+            ->assertSee('src="/landing/images/logoeagle.png"', false)
             ->assertSee('href="/api/health"', false)
             ->assertSee('Real-Time Weather Enrichment')
             ->assertSee(
@@ -32,9 +33,18 @@ class LandingPageTest extends TestCase
             ->assertSee('0.9777')
             ->assertSee('0.9669')
             ->assertSee('0.0053')
+            ->assertSee('FoodPulse | Zuniega Docil © 2026')
             ->assertDontSee('88.4%')
             ->assertDontSee('85.7%')
             ->assertDontSee('0.91');
+    }
+
+    public function test_landing_stylesheet_uses_public_eagle_background(): void
+    {
+        $stylesheet = file_get_contents(public_path('landing/foodpulse.css'));
+
+        $this->assertIsString($stylesheet);
+        $this->assertStringContainsString('url("/landing/images/eagle.png")', $stylesheet);
     }
 
     public function test_health_route_still_returns_laravel_api_json(): void
