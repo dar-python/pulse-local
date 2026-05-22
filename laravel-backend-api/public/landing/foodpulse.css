@@ -82,6 +82,16 @@ code {
     font-size: 0.78rem;
 }
 
+.brand-logo {
+    border: 1px solid var(--dusk);
+    border-radius: 8px;
+    display: block;
+    flex: 0 0 2.5rem;
+    height: 2.5rem;
+    object-fit: cover;
+    width: 2.5rem;
+}
+
 .brand-mark {
     align-items: center;
     background: linear-gradient(135deg, var(--orange), var(--tangerine));
@@ -118,9 +128,27 @@ code {
 }
 
 .hero {
-    background:
-        linear-gradient(135deg, var(--prussian), var(--midnight)),
-        linear-gradient(90deg, var(--dusk), var(--prussian));
+    background: linear-gradient(135deg, var(--prussian), var(--midnight));
+    isolation: isolate;
+}
+
+.hero::before,
+.hero::after {
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+}
+
+.hero::before {
+    background: url("/landing/images/eagle.png") center / cover no-repeat;
+    opacity: 0.34;
+}
+
+.hero::after {
+    background: linear-gradient(90deg, var(--midnight), var(--prussian));
+    opacity: 0.82;
 }
 
 .hero-grid {
@@ -130,6 +158,8 @@ code {
     grid-template-columns: minmax(0, 1.05fr) minmax(20rem, 0.75fr);
     min-height: min(88svh, 54rem);
     padding-block: clamp(3rem, 7vw, 6.5rem);
+    position: relative;
+    z-index: 1;
 }
 
 .eyebrow {
@@ -153,6 +183,28 @@ h1 {
     font-size: 7.3rem;
     line-height: 0.95;
     margin-bottom: 1rem;
+}
+
+.hero-title {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(0.75rem, 2vw, 1.3rem);
+    margin-bottom: 1rem;
+}
+
+.hero-title h1 {
+    margin-bottom: 0;
+}
+
+.hero-logo {
+    border: 1px solid var(--dusk);
+    border-radius: 8px;
+    display: block;
+    flex: 0 0 auto;
+    height: clamp(4rem, 8vw, 6.25rem);
+    object-fit: cover;
+    width: clamp(4rem, 8vw, 6.25rem);
 }
 
 h2 {

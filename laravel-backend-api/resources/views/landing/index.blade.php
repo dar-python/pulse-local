@@ -10,7 +10,7 @@
         <header class="site-header">
             <nav class="shell nav-bar" aria-label="FoodPulse sections">
                 <a class="brand" href="#overview" aria-label="FoodPulse overview">
-                    <span class="brand-mark" aria-hidden="true">FP</span>
+                    <img class="brand-logo" src="/landing/images/logoeagle.png" alt="FoodPulse logo">
                     <span>
                         <strong>FoodPulse</strong>
                         <small>Checkout Risk Prediction</small>
@@ -32,7 +32,10 @@
                 <div class="shell hero-grid">
                     <div class="hero-copy">
                         <p class="eyebrow">Academic research and deployed system prototype</p>
-                        <h1>FoodPulse</h1>
+                        <div class="hero-title">
+                            <img class="hero-logo" src="/landing/images/logoeagle.png" alt="FoodPulse logo">
+                            <h1>FoodPulse</h1>
+                        </div>
                         <p class="hero-lead">Checkout-level fulfillment risk prediction for quick-commerce.</p>
                         <p class="hero-body">
                             FoodPulse combines a Flutter mobile app, a Laravel API, real-time checkout enrichment,
@@ -335,8 +338,8 @@
             <div class="shell footer-row">
                 <span class="brand-mark" aria-hidden="true">FP</span>
                 <div>
-                    <strong>FoodPulse / PulseLocal</strong>
-                    <p>Flutter, Laravel, FastAPI, MySQL, Docker, and deployed Logistic Regression.</p>
+                    <strong>FoodPulse | Zuniega Docil © 2026</strong>
+                    <p>Built with Flutter, Laravel, FastAPI, MySQL, Docker, and Logistic Regression.</p>
                 </div>
             </div>
         </footer>
