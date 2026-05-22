@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>FoodPulse | Checkout Fulfillment Risk Prediction</title>
-        <link rel="stylesheet" href="{{ asset('landing/foodpulse.css') }}">
+        <link rel="stylesheet" href="/landing/foodpulse.css">
     </head>
     <body>
         <header class="site-header">
@@ -42,7 +42,7 @@
 
                         <div class="hero-actions">
                             <a class="button button-primary" href="#architecture">View system flow</a>
-                            <a class="button button-secondary" href="{{ url('/api/health') }}">Check API health</a>
+                            <a class="button button-secondary" href="/api/health">Check API health</a>
                         </div>
                     </div>
 

@@ -15,6 +15,8 @@ class LandingPageTest extends TestCase
 
         $response->assertOk()
             ->assertSee('FoodPulse')
+            ->assertSee('href="/landing/foodpulse.css"', false)
+            ->assertSee('href="/api/health"', false)
             ->assertSee('Real-Time Weather Enrichment')
             ->assertSee(
                 'During checkout, Laravel enriches the request with current weather data from the configured weather API before forwarding normalized features to the ML service.'
