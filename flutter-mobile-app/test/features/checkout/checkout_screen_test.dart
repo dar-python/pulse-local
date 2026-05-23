@@ -86,7 +86,10 @@ void main() {
       find.text('Medium fulfillment risk. Keep ETA visible.'),
       findsWidgets,
     );
-    expect(find.text('Current weather: Clear'), findsOneWidget);
+    expect(
+      find.text('Risk score includes current weather: Clear'),
+      findsOneWidget,
+    );
     expect(find.text('Condition: Partly cloudy'), findsOneWidget);
   });
 

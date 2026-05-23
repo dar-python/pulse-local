@@ -41,13 +41,20 @@ trained model feature row.
   },
   "payment_method": "cod",
   "subtotal": 185,
-  "total_quantity": 1
+  "total_quantity": 1,
+  "delivery_latitude": 11.2442,
+  "delivery_longitude": 125.003
 }
 ```
 
 Accepted enum values:
 
 - `payment_method`: `cod`, `cash`, `gcash`, `card`
+- Optional legacy/context fields are validated when present:
+  `delivery_distance_km`, `merchant_prep_time`, `rider_to_order_ratio`,
+  `traffic_corridor_intensity`, `weather_category`, and `address_complexity`.
+  Laravel does not trust client weather for prediction; it resolves current
+  weather server-side from delivery or merchant coordinates.
 
 ### Laravel Response Body
 
@@ -58,11 +65,32 @@ Accepted enum values:
   "data": {
     "risk_score": 0.72,
     "risk_level": "High",
-    "recommendation": "High fulfillment risk. Adjust ETA and notify merchant.",
-    "eta_range": "40-55 min"
+    "recommendation": "High fulfillment risk detected due to weather, traffic, rider availability, or merchant preparation time. Expect a longer ETA. Consider choosing cashless payment to reduce fulfillment friction. You may continue, but delivery may take longer than usual. Merchant readiness check is recommended before confirming.",
+    "eta_range": "40-55 min",
+    "advisory_message": "High fulfillment risk detected due to weather, traffic, rider availability, or merchant preparation time. Expect a longer ETA. Consider choosing cashless payment to reduce fulfillment friction. You may continue, but delivery may take longer than usual. Merchant readiness check is recommended before confirming.",
+    "advisory_reasons": [
+      {
+        "code": "rainy_weather",
+        "label": "Bad weather may slow down delivery."
+      }
+    ],
+    "weather": {
+      "category": "rainy",
+      "condition_text": "Light rain",
+      "condition_code": 1183,
+      "temperature_c": 28.4,
+      "precip_mm": 0.8,
+      "source": "weatherapi",
+      "observed_at": "2026-05-21T10:30:00+08:00",
+      "latitude": 11.2442,
+      "longitude": 125.003
+    }
   }
 }
 ```
+
+If WeatherAPI is unavailable or not configured, Laravel still predicts using a
+neutral weather fallback and returns `weather.source` as `fallback`.
 
 When the Python ML service is unavailable, Laravel still returns `200 OK` with
 the same wrapper and a fallback payload:

@@ -8,22 +8,29 @@ class CheckoutRiskAdvisoryResolver
     {
         if ($this->isLowRisk($prediction)) {
             return [
-                'advisory_message' => 'Low risk. Conditions look favorable for this order.',
+                'recommendation' => 'Low fulfillment risk. Delivery is expected to proceed normally.',
+                'advisory_message' => 'Low fulfillment risk. Delivery is expected to proceed normally, but the score is not a guarantee.',
                 'advisory_reasons' => [],
             ];
         }
 
         $reasons = array_slice($this->rankedDelayReasons($modelFeatures), 0, 2);
+        $riskBand = $this->riskBand($prediction);
+        $advisory = $this->riskLevelAdvisory($riskBand);
 
         if ($reasons === []) {
-            return [
-                'advisory_message' => 'No major delay reason detected for this order.',
+            return array_filter([
+                'recommendation' => $advisory['recommendation'] ?? null,
+                'advisory_message' => $advisory['message'] ?? 'No major delay reason detected for this order.',
                 'advisory_reasons' => [],
-            ];
+            ], fn (mixed $value): bool => $value !== null);
         }
 
-        return [
-            'advisory_message' => 'Possible delay because of '.$this->reasonPhrase($reasons).'.',
+        $reasonMessage = 'Possible delay because of '.$this->reasonPhrase($reasons).'.';
+
+        return array_filter([
+            'recommendation' => $advisory['recommendation'] ?? null,
+            'advisory_message' => $advisory['message'] ?? $reasonMessage,
             'advisory_reasons' => array_map(
                 fn (array $reason): array => [
                     'code' => $reason['code'],
@@ -31,7 +38,7 @@ class CheckoutRiskAdvisoryResolver
                 ],
                 $reasons
             ),
-        ];
+        ], fn (mixed $value): bool => $value !== null);
     }
 
     private function isLowRisk(array $prediction): bool
@@ -49,6 +56,46 @@ class CheckoutRiskAdvisoryResolver
         $normalizedScore = $score <= 1 ? $score : $score / 100;
 
         return $normalizedScore <= 0.39;
+    }
+
+    private function riskBand(array $prediction): ?string
+    {
+        $level = strtolower((string) ($prediction['risk_level'] ?? ''));
+        if (in_array($level, ['low', 'medium', 'high'], true)) {
+            return $level;
+        }
+
+        if ($level === 'unknown' || ! isset($prediction['risk_score']) || ! is_numeric($prediction['risk_score'])) {
+            return null;
+        }
+
+        $score = (float) $prediction['risk_score'];
+        $normalizedScore = $score <= 1 ? $score : $score / 100;
+
+        if ($normalizedScore <= 0.39) {
+            return 'low';
+        }
+
+        if ($normalizedScore <= 0.69) {
+            return 'medium';
+        }
+
+        return 'high';
+    }
+
+    private function riskLevelAdvisory(?string $riskBand): array
+    {
+        return match ($riskBand) {
+            'medium' => [
+                'recommendation' => 'Medium fulfillment risk. Check ETA and address details before placing the order.',
+                'message' => 'Medium fulfillment risk. Check the ETA and confirm the address details before placing the order.',
+            ],
+            'high' => [
+                'recommendation' => 'High fulfillment risk detected due to weather, traffic, rider availability, or merchant preparation time. Expect a longer ETA. Consider choosing cashless payment to reduce fulfillment friction. You may continue, but delivery may take longer than usual. Merchant readiness check is recommended before confirming.',
+                'message' => 'High fulfillment risk detected due to weather, traffic, rider availability, or merchant preparation time. Expect a longer ETA. Consider choosing cashless payment to reduce fulfillment friction. You may continue, but delivery may take longer than usual. Merchant readiness check is recommended before confirming.',
+            ],
+            default => [],
+        };
     }
 
     private function rankedDelayReasons(array $modelFeatures): array

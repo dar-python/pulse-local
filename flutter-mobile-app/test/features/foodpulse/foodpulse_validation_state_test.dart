@@ -132,6 +132,36 @@ void main() {
     expect(repository.checkoutRequests, isEmpty);
   });
 
+  testWidgets('checkout validates missing payment method before submission', (
+    tester,
+  ) async {
+    final repository = _FakeFoodPulseRepository();
+
+    await tester.pumpWidget(
+      _wrapped(
+        repository: repository,
+        riskRepository: const _StaticRiskRepository.medium(),
+        child: CheckoutScreen(
+          restaurant: MockFoodPulseData.restaurants.first,
+          items: MockFoodPulseData.defaultCart,
+          initialPaymentMethod: '',
+          checkoutRiskRepository: const _StaticRiskRepository.medium(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.textContaining('Place Order'));
+    await tester.tap(find.textContaining('Place Order'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Choose a payment method before placing your order.'),
+      findsOneWidget,
+    );
+    expect(repository.checkoutRequests, isEmpty);
+  });
+
   testWidgets('checkout shows order and confirmation loading states', (
     tester,
   ) async {

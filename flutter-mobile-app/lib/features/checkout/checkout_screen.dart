@@ -957,7 +957,7 @@ class _WeatherLine extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Current weather: ${weather.displayCategory}',
+          'Risk score includes current weather: ${weather.displayCategory}',
           style: const TextStyle(
             color: AppColors.alabaster,
             fontSize: 11,

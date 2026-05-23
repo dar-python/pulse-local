@@ -55,7 +55,7 @@ class CheckoutRiskApiTest extends TestCase
                 'data' => [
                     'risk_score' => 0.85,
                     'risk_level' => 'High',
-                    'recommendation' => 'High fulfillment risk. Adjust ETA and notify merchant.',
+                    'recommendation' => 'High fulfillment risk detected due to weather, traffic, rider availability, or merchant preparation time. Expect a longer ETA. Consider choosing cashless payment to reduce fulfillment friction. You may continue, but delivery may take longer than usual. Merchant readiness check is recommended before confirming.',
                     'eta_range' => '40-55 min',
                     'weather' => [
                         'category' => 'clear',
@@ -317,7 +317,7 @@ class CheckoutRiskApiTest extends TestCase
             ->assertJsonPath('data.eta_range', '40-55 min')
             ->assertJsonPath(
                 'data.advisory_message',
-                'Possible delay because of heavy traffic and longer preparation time.'
+                'High fulfillment risk detected due to weather, traffic, rider availability, or merchant preparation time. Expect a longer ETA. Consider choosing cashless payment to reduce fulfillment friction. You may continue, but delivery may take longer than usual. Merchant readiness check is recommended before confirming.'
             )
             ->assertJsonMissingPath('data.model_features')
             ->assertJsonMissingPath('data.feature_keys');
@@ -441,6 +441,39 @@ class CheckoutRiskApiTest extends TestCase
                 'items.0.quantity',
                 'items.0.unit_price',
                 'payment_method',
+            ])
+            ->assertJsonMissingPath('exception')
+            ->assertJsonMissingPath('trace');
+    }
+
+    public function test_checkout_risk_endpoint_rejects_invalid_optional_prediction_context(): void
+    {
+        $response = $this->postJson('/api/checkout/risk', [
+            ...$this->validPayload(),
+            'delivery_latitude' => 95,
+            'delivery_longitude' => -190,
+            'delivery_distance_km' => -1,
+            'merchant_prep_time' => 121,
+            'rider_to_order_ratio' => 2.5,
+            'traffic_corridor_intensity' => 'gridlocked',
+            'weather_category' => 'hailing',
+            'address_complexity' => 'maze',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJson([
+                'success' => false,
+                'message' => 'Validation failed.',
+            ])
+            ->assertJsonValidationErrors([
+                'delivery_latitude',
+                'delivery_longitude',
+                'delivery_distance_km',
+                'merchant_prep_time',
+                'rider_to_order_ratio',
+                'traffic_corridor_intensity',
+                'weather_category',
+                'address_complexity',
             ])
             ->assertJsonMissingPath('exception')
             ->assertJsonMissingPath('trace');

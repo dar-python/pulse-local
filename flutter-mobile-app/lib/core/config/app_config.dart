@@ -4,6 +4,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class AppConfig {
   AppConfig._();
 
+  static const String _productionBaseUrl =
+      'https://foodpulse-zuniega-docil.duckdns.org';
   static const String _androidEmulatorBaseUrl = 'http://10.0.2.2:8080';
   static const String _windowsDesktopBaseUrl = 'http://127.0.0.1:8080';
 
@@ -38,6 +40,10 @@ class AppConfig {
   static String get laravelBaseUrl => apiBaseUrl;
 
   static String get _defaultLaravelBaseUrl {
+    if (!kDebugMode) {
+      return _productionBaseUrl;
+    }
+
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return _androidEmulatorBaseUrl;
     }
@@ -56,7 +62,9 @@ class AppConfig {
       trimmed = trimmed.substring(0, trimmed.length - 4);
     }
 
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    if (kDebugMode &&
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android) {
       final uri = Uri.tryParse(trimmed);
       if (uri != null &&
           (uri.host == '127.0.0.1' || uri.host.toLowerCase() == 'localhost')) {
