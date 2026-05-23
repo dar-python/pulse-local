@@ -307,7 +307,7 @@ class _LoginPanel extends StatelessWidget {
               _LoginField(
                 keyValue: const Key('login_username'),
                 controller: usernameController,
-                hintText: 'Enter your email or phone',
+                hintText: 'Enter your username',
                 icon: Icons.person_outline_rounded,
                 maxLength: DemoAccount.maxUsernameLength,
                 inputFormatters: [
