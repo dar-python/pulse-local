@@ -30,13 +30,9 @@ jobs:
 
       - name: Prepare Flutter environment
         run: |
-          if [ -f .env.example ]; then
-            cp .env.example .env
-          else
-            printf '%s\n' \
-              'LARAVEL_BASE_URL=http://127.0.0.1:8000' \
-              'APP_ENV=ci' > .env
-          fi
+          printf '%s\n' \
+            'LARAVEL_BASE_URL=https://foodpulse-zuniega-docil.duckdns.org' \
+            'APP_ENV=ci' > .env
 
       - name: Show Flutter version
         run: flutter --version
@@ -51,7 +47,7 @@ jobs:
         run: flutter test
 
       - name: Build release APK
-        run: flutter build apk --release --dart-define=LARAVEL_BASE_URL=http://127.0.0.1:8000
+        run: flutter build apk --release --dart-define=LARAVEL_BASE_URL=https://foodpulse-zuniega-docil.duckdns.org
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

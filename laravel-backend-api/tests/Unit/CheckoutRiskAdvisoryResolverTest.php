@@ -76,10 +76,54 @@ class CheckoutRiskAdvisoryResolverTest extends TestCase
         );
 
         $this->assertSame(
-            'Low risk. Conditions look favorable for this order.',
+            'Low fulfillment risk. Delivery is expected to proceed normally, but the score is not a guarantee.',
             $advisory['advisory_message'],
         );
+        $this->assertSame(
+            'Low fulfillment risk. Delivery is expected to proceed normally.',
+            $advisory['recommendation'],
+        );
         $this->assertSame([], $advisory['advisory_reasons']);
+    }
+
+    public function test_high_risk_returns_decision_support_recommendations_without_blocking_checkout(): void
+    {
+        $advisory = app(CheckoutRiskAdvisoryResolver::class)->forPrediction(
+            ['risk_level' => 'High', 'risk_score' => 0.85],
+            [
+                ...$this->baseFeatures(),
+                'Weather' => 'stormy',
+                'Traffic_Level' => 'high',
+                'Preparation_Time_min' => 35,
+                'Courier_Experience_yrs' => 1.0,
+            ],
+        );
+
+        $this->assertSame(
+            'High fulfillment risk detected due to weather, traffic, rider availability, or merchant preparation time. Expect a longer ETA. Consider choosing cashless payment to reduce fulfillment friction. You may continue, but delivery may take longer than usual. Merchant readiness check is recommended before confirming.',
+            $advisory['recommendation'],
+        );
+        $this->assertStringContainsString('Expect a longer ETA.', $advisory['advisory_message']);
+        $this->assertStringContainsString('You may continue', $advisory['advisory_message']);
+        $this->assertStringContainsString('Merchant readiness check is recommended', $advisory['advisory_message']);
+    }
+
+    public function test_medium_risk_returns_softer_eta_and_address_advisory(): void
+    {
+        $advisory = app(CheckoutRiskAdvisoryResolver::class)->forPrediction(
+            ['risk_level' => 'Medium', 'risk_score' => 0.55],
+            [
+                ...$this->baseFeatures(),
+                'Traffic_Level' => 'medium',
+            ],
+        );
+
+        $this->assertSame(
+            'Medium fulfillment risk. Check ETA and address details before placing the order.',
+            $advisory['recommendation'],
+        );
+        $this->assertStringContainsString('Check the ETA', $advisory['advisory_message']);
+        $this->assertStringContainsString('confirm the address details', $advisory['advisory_message']);
     }
 
     private function baseFeatures(): array

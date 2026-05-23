@@ -7,7 +7,7 @@ import 'features/auth/demo_account.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: ".env", isOptional: true);
   await DemoAccount.load();
 
   runApp(const FoodPulseApp());
